@@ -36,9 +36,10 @@ semanales y anuales, fines de semana trabajados.
 ## Reglas de negocio acordadas
 - El cuadro arranca y se aplica desde el lunes 11/01/2027 (confirmado); cada uno está esa semana
   en su semana de inicio. Días anteriores (1–10 de enero): gris, sin turno, no editables.
-- Vacaciones: no suman horas trabajadas. En la columna semanal se muestra la cuenta con tope
-  36:04 por semana (5:09 por día de vacaciones) y en rojo lo que se pierde ("palma").
-  Nunca se ganan horas. Arriba: horas trabajadas y horas palmadas en vacaciones (sin comparar con jornada).
+- Vacaciones: no suman a las horas trabajadas. Cada semana de vacaciones vale 36:04 (5:09 por día
+  de vacaciones si la semana va a medias). Se compara con lo que marcaba el cuadro: si marcaba más,
+  se pierde la diferencia (rojo, −); si marcaba menos, se gana (verde, +). Arriba: horas trabajadas
+  y saldo de vacaciones del año (sin comparar con jornada).
 - Baja: por defecto computa las horas del turno que tocaba.
 - Fin de semana trabajado: viernes de noche/tarde-noche (N1, N2, TN3) o sábado/domingo con turno.
   Los de reserva (RES) se cuentan aparte.

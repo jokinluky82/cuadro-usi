@@ -111,6 +111,7 @@ textarea{resize:vertical;min-height:60px}
 .wkh{align-self:center;text-align:right;font-family:var(--f-code);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink);padding-right:2px;line-height:1.1}
 .wkh small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
 .wkh small.loss{color:var(--danger);font-weight:700}
+.wkh small.gain{color:var(--ok);font-weight:700}
 .day.k-m{background:var(--m-bg)}.day.k-t{background:var(--t-bg)}.day.k-n{background:var(--n-bg)}.day.k-r{background:var(--r-bg)}.day.k-v{background:var(--v-bg)}.day.k-b{background:var(--b-bg)}
 [hidden]{display:none!important}
 .day.manual{border:1.5px dashed currentColor}
@@ -252,8 +253,8 @@ const absMins=(k,base)=>k==="v"?base.mins:(S.cfg.bajaHours==="cuadro"?base.mins:
 /* Semana con vacaciones: cuenta como máximo el tope semanal (36:04 por defecto), repartido por días; nunca se ganan horas */
 const vacWeekMins=()=>{const v=String(S.cfg.vacWeek||"36:04");return /^\d{1,2}:\d{2}$/.test(v)?mins(v):2164};
 function weekCredit(days){const vd=days.filter(s=>s.k==="v");const sched=vd.reduce((a,s)=>a+s.mins,0);
-  const cap=Math.round(vd.length*vacWeekMins()/7),credit=Math.min(sched,cap);
-  return {ratio:sched>0?credit/sched:1,loss:sched-credit};}
+  const cap=Math.round(vd.length*vacWeekMins()/7);
+  return {credit:cap,diff:cap-sched,sched};}
 const vacOf=(pid,ds)=>S.vacations.find(v=>v.personId===pid&&v.from<=ds&&ds<=v.to);
 function durOf(start,end,hours,k){if(NOTIME(k))return 0;if(start&&end){let m=mins(end)-mins(start);if(m<=0)m+=1440;return m}if(hours)return mins(hours);return 0}
 /* Turno real de una persona: el del cuadro, o el cambiado a mano ese día */
@@ -421,7 +422,8 @@ function saldoBlock(tot,done,Y,tod,loss=0){
   const yr=String(Y),past=tod.slice(0,4)>yr,future=tod.slice(0,4)<yr;
   let h=`<div class="saldo"><span>Horas trabajadas en ${Y}</span><b>${hfmt(tot)}</b>`;
   if(!future)h+=`<span>Hechas ${past?"en el año":"hasta hoy"}</span><b>${hfmt(done)}</b>`;
-  h+=`<span>Horas que palmas en vacaciones</span><b class="${loss?"neg":""}">${loss?"−"+hfmt(loss):"0h"}</b>`;
+  h+=`<span>Saldo de las vacaciones</span><b class="${loss>0?"pos":loss<0?"neg":""}">${loss>0?"+":loss<0?"−":""}${hfmt(Math.abs(loss))}</b>`;
+  h+=`<span class="muted" style="grid-column:1/-1;font-size:12px">Cada semana de vacaciones vale ${S.cfg.vacWeek||"36:04"}. Si el cuadro marcaba más, pierdes la diferencia; si marcaba menos, la ganas.</span>`;
   const sd=S.cfg.startDate||S.cfg.anchor;
   if(sd>`${Y}-01-01`&&sd.startsWith(String(Y)))h+=`<span class="muted" style="grid-column:1/-1;font-size:12px">No incluye los días anteriores al ${longDate(sd)} (calendario anterior, en gris).</span>`;
   return h+`</div>`;
@@ -452,9 +454,9 @@ function viewCuadro(){
         cells+=`<button type="button" class="day k-${s.k} ${ds===tod?"today":""} ${s.manual?"manual":""}" data-day="${ds}" aria-label="${longDate(ds)}: ${esc(s.code)}${s.manual?" (cambiado)":""}">${f}<span class="n">${new Date(t).getUTCDate()}</span><span class="c ${s.code.length>3?"long":""}">${s.code==="D"?"·":esc(s.code)}</span></button>`;
       }
       wmins=Math.round(wmins);
-      if(wc.loss&&wk>=first-6*DAY&&wk+6*DAY<=last+6*DAY&&!lossSeen.has(wk)){lossSeen.add(wk);lossTot+=wc.loss}
-      const vcred=Math.round(wdays.reduce((a,x)=>a+(x.k==="v"?x.mins*wc.ratio:0),0)),wshow=wmins+vcred;
-      cells+=`<div class="wkh" title="Horas de la semana (lunes a domingo)${vcred?`. Incluye ${hfmt(vcred)} de vacaciones, que no suman al total del mes ni del año`:""}${wc.loss?". Palmas "+hfmt(wc.loss):""}">${hfmt(wshow)}${wc.loss?`<small class="loss">−${hfmt(wc.loss)}</small>`:`<small>sem ${sh(fmt(wk)).week}</small>`}</div>`;
+      if(wc.diff&&!lossSeen.has(wk)){lossSeen.add(wk);lossTot+=wc.diff}
+      const vcred=wc.credit,wshow=wmins+vcred;
+      cells+=`<div class="wkh" title="Horas de la semana (lunes a domingo)${vcred?`. Incluye ${hfmt(vcred)} de vacaciones, que no suman al total del mes ni del año`:""}${wc.diff?(wc.diff>0?". Ganas ":". Palmas ")+hfmt(Math.abs(wc.diff)):""}">${hfmt(wshow)}${wc.diff?`<small class="${wc.diff>0?"gain":"loss"}">${wc.diff>0?"+":"−"}${hfmt(Math.abs(wc.diff))}</small>`:`<small>sem ${sh(fmt(wk)).week}</small>`}</div>`;
     }
     months+=`<section class="card month" id="m${mo}"><h3><span style="text-transform:capitalize">${MONTHS[mo]}</span><small>${hfmt(Math.round(mm))} en el mes</small></h3>
       <div class="grid7">${DOWS.map(d=>`<div class="dow">${d}</div>`).join("")}<div class="dow" style="text-align:right">Horas</div>${cells}</div></section>`;
@@ -809,7 +811,7 @@ async function downloadPAS(){
     let tot=0,loss=0;const cnt={m:0,t:0,n:0,r:0,d:0,v:0,b:0,x:0};const seen=new Set();
     for(let t=Date.UTC(Y,0,1)-dowOf(Date.UTC(Y,0,1))*DAY;t<=Date.UTC(Y,11,31);t+=7*DAY){
       const wd=[0,1,2,3,4,5,6].map(i=>sh(fmt(t+i*DAY))),wc=weekCredit(wd);
-      if(wc.loss&&!seen.has(t)){seen.add(t);loss+=wc.loss}
+      if(wc.diff&&!seen.has(t)){seen.add(t);loss+=wc.diff}
       wd.forEach((x,i)=>{const d=t+i*DAY;if(d<Date.UTC(Y,0,1)||d>Date.UTC(Y,11,31))return;cnt[x.k]++;if(x.k!=="v")tot+=x.mins});}
     let fw=0;
     for(let t=Date.UTC(Y,0,1);t<=Date.UTC(Y,11,31);t+=DAY){if(dowOf(t)!==5||fmt(t+DAY)<(S.cfg.startDate||S.cfg.anchor))continue;
@@ -819,7 +821,7 @@ async function downloadPAS(){
     doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(91,104,98);
     doc.text(`${P.name}${person?` · Semana de inicio ${start}`:""} · Generado el ${new Date().toLocaleDateString("es-ES")}`,M,21.5);
     doc.setTextColor(23,32,28);doc.setFontSize(9);
-    const sum=[["Horas trabajadas",hfmt(Math.round(tot))],["Palmadas vac.",loss?"-"+hfmt(loss):"0h"],["Mañanas",String(cnt.m)],["Tardes",String(cnt.t)],["Noches",String(cnt.n)],["Reserva",String(cnt.r)],["Vacaciones",String(cnt.v)],["FdS trab.",String(fw)]];
+    const sum=[["Horas trabajadas",hfmt(Math.round(tot))],["Saldo vacaciones",(loss>0?"+":loss<0?"-":"")+hfmt(Math.abs(loss))],["Mañanas",String(cnt.m)],["Tardes",String(cnt.t)],["Noches",String(cnt.n)],["Reserva",String(cnt.r)],["Vacaciones",String(cnt.v)],["FdS trab.",String(fw)]];
     let sx=M;sum.forEach(([l,v])=>{doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(v,sx,29);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(91,104,98);doc.text(l,sx,32.5);doc.setTextColor(23,32,28);sx+=24});
     doc.setDrawColor(15,93,78);doc.setLineWidth(.5);doc.line(M,35,W-M,35);
     // meses
@@ -835,7 +837,7 @@ async function downloadPAS(){
         const wd=[0,1,2,3,4,5,6].map(i=>sh(fmt(wk+i*DAY))),wc=weekCredit(wd);let wm=0;
         const y=oy+10+row*rh;
         wd.forEach((x,i)=>{
-          const t=wk+i*DAY,val=x.k==="v"?x.mins*wc.ratio:x.mins;wm+=val;
+          const t=wk+i*DAY,val=x.k==="v"?0:x.mins;wm+=val;
           if(t<first||t>last)return;
           if(x.k!=="v")mm+=x.mins;
           const cx=ox+i*dw;
@@ -846,10 +848,10 @@ async function downloadPAS(){
           doc.setFont("helvetica","bold");doc.setFontSize(code.length>4?4.4:code.length>3?5:6);doc.text(code,cx+dw/2,y+5.4,{align:"center"});
           if(x.manual&&x.k!=="v"){doc.setDrawColor(...INK[x.k]);doc.setLineWidth(.25);doc.setLineDashPattern([.6,.4],0);doc.roundedRect(cx+.3,y,dw-.6,rh-.8,.8,.8,"S");doc.setLineDashPattern([],0)}
         });
-        wm=Math.round(wm);
+        wm=Math.round(wm+wc.credit);
         doc.setTextColor(23,32,28);doc.setFont("helvetica","bold");doc.setFontSize(5.4);
         doc.text(wm?hfmt(wm):"-",ox+7*dw+hc-.5,y+3,{align:"right"});
-        if(wc.loss){doc.setTextColor(179,38,30);doc.setFontSize(4.8);doc.text("-"+hfmt(wc.loss),ox+7*dw+hc-.5,y+5.6,{align:"right"})}
+        if(wc.diff){if(wc.diff>0)doc.setTextColor(31,122,61);else doc.setTextColor(179,38,30);doc.setFontSize(4.8);doc.text((wc.diff>0?"+":"-")+hfmt(Math.abs(wc.diff)),ox+7*dw+hc-.5,y+5.6,{align:"right"})}
         else{const w=wd[0].week;doc.setFont("helvetica","normal");doc.setTextColor(91,104,98);doc.setFontSize(4.4);if(w!=="–")doc.text("s"+w,ox+7*dw+hc-.5,y+5.6,{align:"right"})}
       }
       doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.setTextColor(23,32,28);doc.text(MONTHS[mo][0].toUpperCase()+MONTHS[mo].slice(1),ox,oy+4.5);
@@ -860,7 +862,7 @@ async function downloadPAS(){
     [["m","Mañana"],["t","Tarde"],["n","Noche"],["r","Reserva"],["v","Vacaciones"],["b","Baja"],["d","Descanso"],["x","Calendario anterior"]].forEach(([k,l])=>{
       doc.setFillColor(...FILL[k]);doc.setDrawColor(217,223,217);doc.setLineWidth(.2);doc.rect(lx,ly-2.4,3,3,"FD");doc.setFontSize(7);doc.setTextColor(91,104,98);doc.text(l,lx+4,ly);lx+=doc.getTextWidth(l)+9});
     doc.setFontSize(6.5);
-    doc.text(doc.splitTextToSize(`"h": horas de la semana (lunes a domingo); "s": semana del cuadro. En semanas de vacaciones cuentan como máximo ${S.cfg.vacWeek||"36:04"} (repartido por días) y en rojo lo que se palma. Los totales de mes y año son solo horas trabajadas. Borde discontinuo: turno cambiado.`,W-2*M),M,ly+5);
+    doc.text(doc.splitTextToSize(`"h": horas de la semana (lunes a domingo); "s": semana del cuadro. En semanas de vacaciones valen ${S.cfg.vacWeek||"36:04"} (repartido por días): en verde lo que se gana y en rojo lo que se palma frente al cuadro. Los totales de mes y año son solo horas trabajadas. Borde discontinuo: turno cambiado.`,W-2*M),M,ly+5);
     doc.save(`PAS ${Y} - ${title}.pdf`);
     toast("PDF descargado");
   }catch(e){console.error(e);toast("No se ha podido crear el PDF. Comprueba la conexión.")}
