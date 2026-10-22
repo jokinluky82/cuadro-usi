@@ -9,6 +9,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Cuadro USI">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Cuadro USI</title>
@@ -276,7 +280,7 @@ function sub(k,fn){if(unsubs[k])return;handlers[k]=fn;unsubs[k]=store.subscribe(
 function unsubAll(keep){for(const k of Object.keys(unsubs)){if(keep.includes(k))continue;unsubs[k]();delete unsubs[k]}}
 
 function bindPublic(){
-  sub("people",list=>{S.people=list.sort((a,b)=>(a.startWeek-b.startWeek)||String(a.name).localeCompare(b.name));if(S.ready)render();else renderLogin()});
+  sub("people",list=>{S.people=list.sort((a,b)=>(a.startWeek-b.startWeek)||String(a.name).localeCompare(b.name));if(S.ready){if(isAdm())sub("pins",l=>{S.pins=Object.fromEntries(l.map(p=>[p.id,p.pin]));render()});render()}else renderLogin()});
   sub("config",list=>{const c=list.find(x=>x.id==="main");S.cfg={...DEFAULT_CFG,...(c||{})};if(S.ready)render();else renderLogin()});
 }
 function bindPrivate(){
@@ -301,8 +305,12 @@ async function boot(){
     const u=user||(await auth.signInAnonymously(AUTH)).user;
     S.uid=u.uid;
     bindPublic();
+    const known=LS.get("pid:"+S.uid);
+    if(known){S.myPid=known;startApp();
+      fs.getDoc(fs.doc(DB,"sessions",S.uid)).then(ss=>{if(!ss.exists())logout()}).catch(()=>{});
+      return}
     const ss=await fs.getDoc(fs.doc(DB,"sessions",S.uid)).catch(()=>null);
-    if(ss&&ss.exists()){S.myPid=ss.data().personId;await startApp()}
+    if(ss&&ss.exists()){S.myPid=ss.data().personId;LS.set("pid:"+S.uid,S.myPid);await startApp()}
     else renderLogin();
   }catch(e){
     console.error(e);
@@ -311,7 +319,7 @@ async function boot(){
 }
 async function startApp(){
   // espera a tener la lista de personas para saber si eres administrador
-  for(let i=0;i<50&&!S.people.length;i++)await new Promise(r=>setTimeout(r,100));
+  for(let i=0;i<20&&!S.people.length;i++)await new Promise(r=>setTimeout(r,50));
   S.ready=true;$("#login").hidden=true;
   bindPrivate();render();
   if(S.tab==="cuadro")go("cuadro");
@@ -350,7 +358,7 @@ function renderLogin(){
     try{
       if(firstAdmin)await F.setDoc(F.doc(DB,"pins",p.id),{pin});
       await F.setDoc(F.doc(DB,"sessions",S.uid),{personId:p.id,pin,at:new Date().toISOString()});
-      S.myPid=p.id;
+      S.myPid=p.id;LS.set("pid:"+S.uid,p.id);
       if(firstAdmin)await F.updateDoc(F.doc(DB,"config","main"),{adminPinSet:true}).catch(()=>{});
       await startApp();
     }catch(err){
@@ -361,6 +369,7 @@ function renderLogin(){
   });
 }
 async function logout(){
+  LS.set("pid:"+S.uid,null);
   try{await F.deleteDoc(F.doc(DB,"sessions",S.uid))}catch(e){}
   unsubAll(["people","config"]);
   Object.assign(S,{ready:false,myPid:null,requests:[],overrides:{},vacations:[],pins:{},sheet:null,viewSel:null,tab:"cuadro"});
