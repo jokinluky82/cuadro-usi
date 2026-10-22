@@ -610,7 +610,7 @@ function viewEquipo(){
   <section class="card"><h2>Personas del equipo · ${S.people.length}</h2>
     <p class="muted" style="margin:0 0 8px;font-size:13px">Pon a cada persona con la semana del cuadro en la que empieza enero.</p>
     <div>${S.people.map(p=>`<div class="edit-row"><input type="text" id="pn-${esc(p.id)}" value="${esc(p.name)}" data-pname="${esc(p.id)}" aria-label="Nombre"><select data-pweek="${esc(p.id)}" aria-label="Semana">${wkOpts(p.startWeek)}</select><button class="btn small danger" data-pdel="${esc(p.id)}" aria-label="Quitar">Quitar</button></div>
-      <div class="row" style="padding:0 0 8px;gap:8px;font-size:13px"><span class="muted">PIN</span><span class="pinbox">${S.pins[p.id]?esc(S.pins[p.id]):"—"}</span>${p.id===m?.id?`<button class="btn small ghost" data-pinset="${esc(p.id)}">Cambiar mi PIN</button>`:`<button class="btn small ghost" data-pingen="${esc(p.id)}">${S.pins[p.id]?"Nuevo PIN":"Crear PIN"}</button>`}</div>`).join("")}</div>
+      <div class="row" style="padding:0 0 8px;gap:8px;font-size:13px"><span class="muted">PIN</span><span class="pinbox">${S.pins[p.id]?esc(S.pins[p.id]):"—"}</span>${p.id===m?.id?`<button class="btn small ghost" data-pinset="${esc(p.id)}">Cambiar mi PIN</button>`:`<button class="btn small ghost" data-pingen="${esc(p.id)}">${S.pins[p.id]?"Cambiar PIN":"Poner PIN"}</button>`}</div>`).join("")}</div>
     <p class="muted" style="margin:8px 0 0;font-size:12px">Pasa a cada uno su PIN en persona o por mensaje privado. Si alguien pierde el móvil, dale un PIN nuevo.</p>
     <div class="edit-row" style="border-top:1px solid var(--line);margin-top:4px"><input type="text" id="newName" placeholder="Nombre"><select id="newWeek">${wkOpts(P.labels[0])}</select><button class="btn small" id="addP">Añadir</button></div>
     ${S.people.length?"":`<button class="btn ghost" id="fillSlots" style="margin-top:8px;width:100%">Crear ${P.labels.length} puestos (uno por semana) para renombrarlos</button>`}
@@ -652,7 +652,7 @@ function wire(v){
   on("[data-uncover]","click",async e=>{const id=e.currentTarget.dataset.uncover;await clearReqOverrides(id);safe(store.patch("requests",id,{status:"abierta",coverId:null,swapDate:null}),"Petición abierta otra vez")});
   on("[data-cancel]","click",async e=>{const b=e.currentTarget;if(b.dataset.armed){await clearReqOverrides(b.dataset.cancel);safe(store.remove("requests",b.dataset.cancel),"Petición anulada")}else{b.dataset.armed="1";b.textContent="Toca otra vez para anular"}});
   on("#logout","click",e=>{const b=e.currentTarget;if(b.dataset.armed)logout();else{b.dataset.armed="1";b.textContent="Toca otra vez para salir"}});
-  on("[data-pingen]","click",e=>{const pid=e.currentTarget.dataset.pingen,pin=String(1000+Math.floor(Math.random()*9000));safe(store.put("pins",pid,{pin}),`PIN creado para ${pname(pid)}`)});
+  on("[data-pingen]","click",e=>openPinChange(e.currentTarget.dataset.pingen));
   on("[data-pinset]","click",()=>openPinChange());
   on("[data-pname]","change",e=>{const v2=e.target.value.trim();if(v2)safe(store.patch("people",e.target.dataset.pname,{name:v2.slice(0,60)}),"Guardado")});
   on("[data-pweek]","change",e=>safe(store.patch("people",e.target.dataset.pweek,{startWeek:Number(e.target.value)}),"Guardado"));
@@ -754,14 +754,18 @@ async function acceptSwap(id){
 async function clearReqOverrides(id){for(const o of Object.values(S.overrides))if(o.fromReq===id)await safe(store.remove("overrides",o.id))}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sheet)closeSheet()});
 
-function openPinChange(){
-  const m=me();if(!m)return;
-  $("#sheetRoot").innerHTML=`<div class="scrim" id="scrim"><form class="sheet" id="pcForm" autocomplete="off"><div class="row"><h3 class="grow">Cambiar mi PIN</h3><button type="button" class="btn ghost small" id="pcClose">Cerrar</button></div>
-    <label class="f" for="pc1">Nuevo PIN (4 números)<input class="pin" id="pc1" type="password" inputmode="numeric" maxlength="4" style="font-size:24px;letter-spacing:.4em;text-align:center"></label>
+function openPinChange(pid){
+  const m=me();pid=pid||m?.id;const p=personById(pid);if(!p)return;
+  const mine=pid===m?.id;
+  $("#sheetRoot").innerHTML=`<div class="scrim" id="scrim"><form class="sheet" id="pcForm" autocomplete="off"><div class="row"><h3 class="grow">${mine?"Cambiar mi PIN":"PIN de "+esc(p.name)}</h3><button type="button" class="btn ghost small" id="pcClose">Cerrar</button></div>
+    <label class="f" for="pc1">${mine?"Nuevo PIN":"Escribe el PIN que quieras"} (4 números)<input class="pin" id="pc1" type="${mine?"password":"text"}" inputmode="numeric" maxlength="4" value="${mine?"":esc(S.pins[pid]||"")}" style="font-size:24px;letter-spacing:.4em;text-align:center"></label>
+    ${mine?"":`<button class="btn ghost" type="button" id="pcRand">Inventar uno al azar</button>`}
     <button class="btn" type="submit">Guardar</button></form></div>`;
+  $("#pc1").focus();
   $("#pcClose").addEventListener("click",()=>{$("#sheetRoot").innerHTML=""});
+  $("#pcRand")?.addEventListener("click",()=>{$("#pc1").value=String(1000+Math.floor(Math.random()*9000))});
   $("#pcForm").addEventListener("submit",async e=>{e.preventDefault();const v=$("#pc1").value.trim();if(!/^\d{4}$/.test(v)){toast("El PIN son 4 números");return}
-    if(await safe(store.put("pins",m.id,{pin:v}),"PIN cambiado"))$("#sheetRoot").innerHTML=""});
+    if(await safe(store.put("pins",pid,{pin:v}),mine?"PIN cambiado":`PIN guardado para ${p.name}`))$("#sheetRoot").innerHTML=""});
 }
 function saveCfg(p){safe(store.put("config","main",{...DEFAULT_CFG,...S.cfg,...p}),"Ajustes guardados")}
 function go(tab){S.tab=tab;render();window.scrollTo(0,0);
