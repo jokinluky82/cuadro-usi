@@ -1,0 +1,76 @@
+rules_version = '2';
+// Reglas de seguridad de Cuadro USI.
+// - Cada móvil entra de forma anónima y abre una "sesión" eligiendo su nombre y su PIN.
+// - Solo con sesión válida se leen cuadros, vacaciones, cambios y peticiones.
+// - Cada persona cambia lo suyo; el administrador (people/{id}.admin == true) cambia todo.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function sessPath() { return /databases/$(database)/documents/sessions/$(request.auth.uid); }
+    function hasSess() { return signedIn() && exists(sessPath()); }
+    function me() { return get(sessPath()).data.personId; }
+    function isAdmin() {
+      return hasSess() && get(/databases/$(database)/documents/people/$(me())).data.get('admin', false) == true;
+    }
+    function pinOk(pid, pin) {
+      return exists(/databases/$(database)/documents/pins/$(pid))
+        && get(/databases/$(database)/documents/pins/$(pid)).data.pin == pin;
+    }
+    function involved(reqId) {
+      let r = get(/databases/$(database)/documents/requests/$(reqId)).data;
+      return r.personId == me() || r.get('coverId', null) == me();
+    }
+    function ownOrAdmin(data) { return isAdmin() || (hasSess() && data.personId == me()); }
+    function viaReq(data) {
+      return hasSess() && data.get('fromReq', null) != null && involved(data.fromReq);
+    }
+
+    // Sesión de cada móvil: solo se crea si el PIN coincide.
+    match /sessions/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['personId', 'pin', 'at'])
+        && pinOk(request.resource.data.personId, request.resource.data.pin);
+    }
+
+    // PINs: solo los ve y cambia el administrador.
+    // Excepción: el administrador crea su propio PIN la primera vez.
+    match /pins/{pid} {
+      allow read, write: if isAdmin();
+      allow create: if signedIn()
+        && get(/databases/$(database)/documents/config/main).data.adminPerson == pid
+        && get(/databases/$(database)/documents/config/main).data.get('adminPinSet', false) == false;
+    }
+
+    // Nombres y ajustes: se leen para poder elegir tu nombre al entrar.
+    match /people/{pid} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /config/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /vacations/{id} {
+      allow read: if hasSess();
+      allow create: if ownOrAdmin(request.resource.data);
+      allow update: if ownOrAdmin(resource.data) && ownOrAdmin(request.resource.data);
+      allow delete: if ownOrAdmin(resource.data);
+    }
+
+    match /requests/{id} {
+      allow read: if hasSess();
+      allow create: if ownOrAdmin(request.resource.data);
+      allow update: if hasSess();
+      allow delete: if ownOrAdmin(resource.data);
+    }
+
+    // Cambios de turno: los tuyos, o los que salen de un cambio en el que participas.
+    match /overrides/{id} {
+      allow read: if hasSess();
+      allow create, update: if ownOrAdmin(request.resource.data) || viaReq(request.resource.data);
+      allow delete: if ownOrAdmin(resource.data) || viaReq(resource.data);
+    }
+  }
+}
