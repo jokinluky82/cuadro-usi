@@ -1,6 +1,6 @@
 // Cuadro USI: guarda la app en el móvil para que abra rápido y sin conexión.
 // La página principal se pide primero a la red (así llegan las actualizaciones) y, si no hay red, sale la guardada.
-const CACHE = "cuadro-usi-v1";
+const CACHE = "cuadro-usi-v2";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
@@ -11,7 +11,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (req.mode === "navigate" || (url.origin === location.origin && url.pathname.endsWith("index.html"))) {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("index.html", copy)); return r; })
+    e.respondWith(fetch(req, {cache: "no-store"}).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("index.html", copy)); return r; })
       .catch(() => caches.match("index.html")));
     return;
   }
