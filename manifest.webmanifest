@@ -1,0 +1,17 @@
+{
+  "name": "Cuadro USI",
+  "short_name": "Cuadro USI",
+  "description": "Cuadro de turnos, vacaciones y cambios del equipo USI.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef1ed",
+  "theme_color": "#0f5d4e",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

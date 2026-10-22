@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5d4e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cuadro USI">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Cuadro USI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&display=swap">
+<style>
+/* Layout: app de móvil — cabecera fija, contenido en una columna, barra de pestañas abajo */
+:root{
+  --bg:#eef1ed; --surface:#ffffff; --ink:#17201c; --muted:#5b6862; --line:#d9dfd9; --accent:#0f5d4e; --accent-ink:#ffffff; --accent-soft:#d5ebe5;
+  --m-bg:#fbe7a6; --m-fg:#634700; --t-bg:#f8cdb4; --t-fg:#7a2f0e; --n-bg:#cdd1f5; --n-fg:#26307d; --r-bg:#c3e5de; --r-fg:#0c4f44; --d-fg:#7d8983; --v-bg:#d3e6fb; --v-fg:#0b4677; --b-bg:#f7cfdc; --b-fg:#7c1239;
+  --danger:#b3261e; --ok:#1f7a3d;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-code:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1412; --surface:#18201c; --ink:#e5ebe7; --muted:#93a19a; --line:#29332e; --accent:#4cc3a6; --accent-ink:#06241d; --accent-soft:#163b33;
+  --m-bg:#4a3a0a; --m-fg:#f6dc86; --t-bg:#4f2614; --t-fg:#f8c3a6; --n-bg:#272c58; --n-fg:#c4c9ff; --r-bg:#123e36; --r-fg:#a0e1d3; --d-fg:#7f8c86; --v-bg:#14354f; --v-fg:#acd5fb; --b-bg:#4d1a2c; --b-fg:#f9b8cd;
+  --danger:#ff8a80; --ok:#7ad69a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1412; --surface:#18201c; --ink:#e5ebe7; --muted:#93a19a; --line:#29332e; --accent:#4cc3a6; --accent-ink:#06241d; --accent-soft:#163b33;
+  --m-bg:#4a3a0a; --m-fg:#f6dc86; --t-bg:#4f2614; --t-fg:#f8c3a6; --n-bg:#272c58; --n-fg:#c4c9ff; --r-bg:#123e36; --r-fg:#a0e1d3; --d-fg:#7f8c86; --v-bg:#14354f; --v-fg:#acd5fb; --b-bg:#4d1a2c; --b-fg:#f9b8cd;
+  --danger:#ff8a80; --ok:#7ad69a; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-block:12px}
+.brand{font-weight:700;letter-spacing:.01em;font-size:17px}
+.brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);letter-spacing:.02em}
+.me-chip{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px 5px 6px;cursor:pointer}
+.me-chip b{color:var(--ink);font-weight:600}
+.dot{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:11px;font-weight:700}
+main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+main .wrap{display:flex;flex-direction:column;gap:16px;padding-block:16px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs button{background:none;border:0;padding:9px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button[aria-selected="true"]{color:var(--accent)}
+.badge{position:absolute;margin-left:18px;margin-top:-4px;background:var(--danger);color:#fff;border-radius:999px;font-size:10px;min-width:16px;height:16px;padding:0 4px;display:grid;place-items:center}
+.ico{position:relative;display:inline-flex}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:600}
+h3{margin:0;font-size:18px;text-wrap:balance}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+select,input[type=date],input[type=text],input[type=number],textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-size:13px;background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+
+/* Códigos de turno */
+.sh{font-family:var(--f-code);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.k-m{background:var(--m-bg);color:var(--m-fg)}
+.k-t{background:var(--t-bg);color:var(--t-fg)}
+.k-n{background:var(--n-bg);color:var(--n-fg)}
+.k-r{background:var(--r-bg);color:var(--r-fg)}
+.k-v{background:var(--v-bg);color:var(--v-fg)}
+.k-b{background:var(--b-bg);color:var(--b-fg)}
+.k-x{background:transparent;color:var(--d-fg)}
+.day.k-x{border:1px dashed var(--line);opacity:.55}
+.k-d{background:transparent;color:var(--d-fg)}
+.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;padding:2px 7px;font-size:13px;min-width:44px}
+
+/* Resumen anual */
+.fdsrow{margin-top:8px;display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px;align-items:stretch}
+.fdsrow .lbl{font-size:11px;font-weight:600;color:var(--muted);line-height:1.15;align-self:center;text-transform:uppercase;letter-spacing:.05em}
+.fdsrow div{border:1px solid var(--line);border-radius:8px;padding:5px 6px;font-size:11px;color:var(--muted);line-height:1.2;text-align:center}
+.fdsrow div b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.fdsrow div.w b{color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:12px;font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid var(--line)}
+
+/* Mes */
+.month h3{font-size:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+.month h3 small{font-size:12px;color:var(--muted);font-weight:500}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 40px;gap:3px}
+.wkh{align-self:center;text-align:right;font-family:var(--f-code);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink);padding-right:2px;line-height:1.1}
+.wkh small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
+.wkh small.loss{color:var(--danger);font-weight:700}
+.day.k-m{background:var(--m-bg)}.day.k-t{background:var(--t-bg)}.day.k-n{background:var(--n-bg)}.day.k-r{background:var(--r-bg)}.day.k-v{background:var(--v-bg)}.day.k-b{background:var(--b-bg)}
+[hidden]{display:none!important}
+.day.manual{border:1.5px dashed currentColor}
+.day.manual .c::after{content:"*"}
+/* Hoja de edición de un día */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:15;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:88vh;overflow:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.seg button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 2px;font-size:13px;font-weight:600;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:transparent;box-shadow:0 0 0 2px var(--accent)}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{border:0;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer}
+.times{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+input[type=time]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 8px;width:100%;min-width:0}
+.dur{font-size:14px}
+.dow{font-size:11px;text-align:center;color:var(--muted);font-weight:600;padding-bottom:2px}
+.day{position:relative;border-radius:8px;min-height:50px;padding:4px 2px 3px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border:1px solid transparent;cursor:pointer;background:none}
+.day.k-d{border-color:var(--line)}
+.day .n{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;opacity:.85}
+.day .c{font-family:var(--f-code);font-weight:700;font-size:13px;max-width:100%;overflow:hidden;white-space:nowrap;letter-spacing:-.01em}
+.day .c.long{font-size:10.5px;letter-spacing:-.03em}
+.day{min-width:0;overflow:hidden}
+header.top{overflow-x:clip}
+main{overflow-x:auto;touch-action:pan-x pan-y}
+main .wrap{zoom:var(--z,1);width:var(--ww,auto)}
+.zoomchip{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:7;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+@media (max-width:400px){.grid7{gap:2px}.day{min-height:46px;border-radius:7px}.month{padding:12px 10px}}
+.day.today{outline:2px solid var(--accent);outline-offset:-1px}
+.day .flag{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--danger)}
+.day .flag.ok{background:var(--ok)}
+.day.empty{visibility:hidden}
+.wkno{font-size:10px;color:var(--muted);text-align:center}
+
+/* Listas */
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:0}
+.li .who{font-weight:600}
+.li .sub{font-size:13px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;letter-spacing:.03em;text-transform:uppercase}
+.tag.open{background:var(--t-bg);color:var(--t-fg)}
+.tag.prop{background:var(--n-bg);color:var(--n-fg)}
+.saldo{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.saldo b{font-variant-numeric:tabular-nums;text-align:right}
+.pos{color:var(--ok)}.neg{color:var(--danger)}
+.tag.done{background:var(--r-bg);color:var(--r-fg)}
+.daynav{display:flex;align-items:center;gap:8px}
+.daynav .btn{padding:10px 12px}
+.bigdate{font-size:22px;font-weight:700}
+.bigdate::first-letter{text-transform:uppercase}
+.req{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.cands{display:flex;flex-wrap:wrap;gap:6px}
+.cand{font-size:13px;border-radius:999px;padding:3px 10px;background:var(--bg);border:1px solid var(--line)}
+.cand.r{background:var(--r-bg);color:var(--r-fg);border-color:transparent}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:90vw}
+.who-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.who-pick button{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;cursor:pointer}
+.who-pick button small{display:block;color:var(--muted)}
+.who-pick button:disabled{opacity:.45;cursor:default}
+.edit-row{display:grid;grid-template-columns:minmax(0,1fr) 84px auto;gap:8px;align-items:center;padding:8px 0 4px;border-top:1px solid var(--line)}
+.edit-row:first-child{border-top:0}
+@media (max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Pantalla de entrada */
+#login{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+#login .box{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+#login h1{margin:0;font-size:26px}
+#login .pinrow{display:flex;gap:8px}
+#login input.pin{font-size:28px;letter-spacing:.4em;text-align:center;font-variant-numeric:tabular-nums;padding:12px}
+#login .err{color:var(--danger);font-weight:600;min-height:1.2em;margin:0}
+.loading{display:flex;align-items:center;gap:10px;color:var(--muted)}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pinbox{font-family:var(--f-code);font-weight:700;font-size:16px;letter-spacing:.15em;min-width:56px;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div class="brand">Cuadro USI <small id="hdrSub">Turnos 2027</small></div>
+  <button class="me-chip" id="meChip" type="button"><span class="dot" id="meDot">?</span><span id="meName">Identifícate</span></button>
+</div></header>
+
+<main><div class="wrap" id="view"></div></main>
+
+<nav class="tabs" aria-label="Secciones"><div class="wrap" role="tablist">
+  <button role="tab" data-tab="cuadro" aria-selected="true"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Mi año</button>
+  <button role="tab" data-tab="dia" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/></svg></span>Quién trabaja</button>
+  <button role="tab" data-tab="peticiones" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg><span class="badge" id="reqBadge" hidden>0</span></span>Cambios</button>
+  <button role="tab" data-tab="equipo" aria-selected="false"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>Equipo</button>
+</div></nav>
+<div id="sheetRoot"></div>
+<div id="login" role="dialog" aria-modal="true" aria-label="Entrar"><div class="box" id="loginBox"><div class="loading"><span class="spin"></span>Cargando…</div></div></div>
+<button class="zoomchip" id="zoomChip" type="button" hidden>100% · Tamaño normal</button>
+
+<script>
+const PATTERNS = {"u27":{"name":"USI 2027 \u00b7 16 semanas","labels":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],"weeks":[[["RES1",null,null,"05:38"],["RES1",null,null,"05:38"],["RES1",null,null,"05:38"],["RES1",null,null,"05:38"],["RES1",null,null,"05:38"],["RES1",null,null,"05:38"],["RES1",null,null,"05:38"]],[["T2","13:45","21:30"],["T2","13:45","21:30"],["T2","13:45","21:30"],["D"],["D"],["D"],["D"]],[["D"],["D"],["M3","06:20","14:40"],["M3","06:20","14:40"],["T4","13:45","20:30"],["T4","14:20","22:50"],["T4","15:00","23:10"]],[["T4","14:20","22:50"],["T6","14:45","23:15"],["D"],["D"],["M3","06:20","14:40"],["M1","05:55","14:00"],["M1","05:55","14:00"]],[["RES5",null,null,"05:37"],["RES5",null,null,"05:37"],["RES5",null,null,"05:37"],["RES5",null,null,"05:37"],["RES5",null,null,"05:37"],["RES5",null,null,"05:38"],["RES5",null,null,"05:38"]],[["M3","06:20","14:40"],["M3","06:20","14:40"],["T4","14:20","22:50"],["T4","14:20","22:50"],["D"],["D"],["D"]],[["D"],["D"],["T6","14:45","23:15"],["T2","13:45","21:30"],["N1","18:40","02:20"],["N1","22:30","06:10"],["D"]],[["RES8",null,null,"05:40"],["RES8",null,null,"05:40"],["RES8",null,null,"05:40"],["RES8",null,null,"05:40"],["RES8",null,null,"05:40"],["RES8",null,null,"05:40"],["RES8",null,null,"05:40"]],[["RES9",null,null,"05:30"],["RES9",null,null,"05:31"],["RES9",null,null,"05:31"],["RES9",null,null,"05:31"],["RES9",null,null,"05:31"],["RES9",null,null,"05:31"],["RES9",null,null,"05:31"]],[["M1","05:55","14:00"],["M1","05:55","14:00"],["M1","05:55","14:00"],["M1","05:55","14:00"],["M1","05:55","14:00"],["D"],["D"]],[["D"],["D"],["D"],["M5","06:30","14:40"],["T2","13:45","21:30"],["T2","14:00","22:30"],["T2","14:00","22:30"]],[["T6","14:45","23:15"],["T4","14:20","22:50"],["D"],["D"],["N2","18:40","02:20"],["N2","22:30","06:10"],["D"]],[["RES15",null,null,"05:37"],["RES15",null,null,"05:37"],["RES15",null,null,"05:37"],["RES15",null,null,"05:37"],["RES15",null,null,"05:37"],["RES15",null,null,"05:38"],["RES15",null,null,"05:38"]],[["M7","06:30","15:00"],["M7","06:30","15:00"],["M7","06:30","15:00"],["T6","14:45","23:15"],["T6","13:45","20:00"],["D"],["D"]],[["D"],["D"],["D"],["D"],["M5","06:30","14:40"],["M3","06:20","14:40"],["M3","06:20","14:40"]],[["M5","06:30","14:40"],["M5","06:30","14:40"],["M5","06:30","14:40"],["D"],["TN3","18:40","02:20"],["TN3","18:40","02:20"],["D"]]]},"c14":{"name":"Ejemplo 14 semanas","labels":[1,2,3,4,5,6,7,8,9,10,11,12,13,14],"weeks":[[["D"],["D"],["D"],["M1","05:55","14:00"],["M1","05:55","14:00"],["M3","06:20","14:40"],["M3","06:10","14:40"]],[["M1","05:55","14:00"],["M1","05:55","14:00"],["M1","05:55","14:00"],["D"],["N3","18:40","02:20"],["N3","18:40","02:20"],["D"]],[["RES1",null,null,"05:01"],["RES1",null,null,"05:01"],["RES1",null,null,"05:01"],["RES1",null,null,"05:01"],["RES1",null,null,"05:01"],["RES1",null,null,"05:01"],["RES3",null,null,"05:31"]],[["RES1",null,null,"05:10"],["RES1",null,null,"05:10"],["RES1",null,null,"05:10"],["RES1",null,null,"05:10"],["RES1",null,null,"05:10"],["RES1",null,null,"05:10"],["RES3",null,null,"05:02"]],[["T6","14:45","23:15"],["T6","14:45","23:15"],["T2","13:45","21:30"],["T2","13:45","21:30"],["D"],["D"],["D"]],[["D"],["D"],["M5","06:30","14:40"],["ABM",null,null,"06:00"],["T4","14:20","22:50"],["T2","14:00","22:30"],["T2","14:00","22:30"]],[["T2","13:45","21:30"],["T2","13:45","21:30"],["D"],["D"],["M5","06:30","14:40"],["M1","05:55","14:25"],["M1","05:55","14:25"]],[["M3","06:20","14:40"],["M3","06:20","14:40"],["T4","14:20","22:50"],["T4","14:20","22:50"],["D"],["D"],["D"]],[["D"],["D"],["T6","14:45","23:15"],["T6","14:45","23:15"],["N1","18:40","02:20"],["N1","22:30","06:10"],["D"]],[["RES2",null,null,"05:18"],["RES2",null,null,"05:18"],["RES2",null,null,"05:18"],["RES2",null,null,"05:18"],["RES2",null,null,"05:18"],["RES2",null,null,"05:18"],["RES4",null,null,"05:48"]],[["RES2",null,null,"05:23"],["RES2",null,null,"05:23"],["RES2",null,null,"05:23"],["RES2",null,null,"05:23"],["RES2",null,null,"05:23"],["RES2",null,null,"05:23"],["RES5",null,null,"05:43"]],[["M5","06:30","14:40"],["M5","06:30","14:40"],["M3","06:20","14:40"],["M3","06:20","14:40"],["M3","06:20","14:40"],["D"],["D"]],[["D"],["D"],["D"],["M5","06:30","14:40"],["T2","13:45","21:30"],["T4","14:20","22:50"],["T4","15:00","23:10"]],[["T4","14:20","22:50"],["T4","14:20","22:50"],["D"],["D"],["N2","18:40","02:20"],["N2","22:30","06:10"],["D"]]]},"c16":{"name":"Ejemplo 16 semanas","labels":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],"weeks":[[["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES3",null,null,"05:41"]],[["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES1",null,null,"05:32"],["RES3",null,null,"05:41"]],[["T6","14:45","23:15"],["T6","14:45","23:15"],["T8","15:00","22:20"],["D"],["D"],["D"],["D"]],[["D"],["D"],["M3","06:20","14:40"],["M3","06:20","14:40"],["T4","14:20","22:50"],["T2","14:00","22:30"],["T2","14:00","22:30"]],[["T2","13:45","21:30"],["T2","13:45","21:30"],["D"],["D"],["M5","06:30","14:40"],["M1","05:55","14:25"],["M1","05:55","14:25"]],[["M1","05:55","14:00"],["M1","05:55","14:00"],["T4","14:20","22:50"],["T4","14:20","22:50"],["D"],["D"],["D"]],[["D"],["D"],["T2","13:45","21:30"],["T2","13:45","21:30"],["N1","18:40","02:20"],["N1","22:30","06:10"],["D"]],[["RES2",null,null,"05:37"],["RES2",null,null,"05:37"],["RES2",null,null,"05:37"],["RES2",null,null,"05:37"],["RES2",null,null,"05:37"],["RES2",null,null,"05:37"],["RES4",null,null,"05:54"]],[["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES5",null,null,"05:46"]],[["M5","06:30","14:40"],["M5","06:30","14:40"],["M1","05:55","14:00"],["M1","05:55","14:00"],["M1","05:55","14:00"],["D"],["D"]],[["D"],["D"],["D"],["M5","06:30","14:40"],["T2","13:45","21:30"],["T4","14:20","22:50"],["T4","15:00","23:10"]],[["T4","14:20","22:50"],["T4","14:20","22:50"],["D"],["D"],["N2","18:40","02:20"],["N2","22:30","06:10"],["D"]],[["D"],["D"],["D"],["D"],["M3","06:20","14:40"],["M3","06:20","14:40"],["M3","06:10","14:40"]],[["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES2",null,null,"05:30"],["RES6",null,null,"05:46"]],[["M3","06:20","14:40"],["M3","06:20","14:40"],["M5","06:30","14:40"],["D"],["N3","18:40","02:20"],["N3","18:40","02:20"],["D"]],[["T8","15:00","22:20"],["T8","15:00","22:20"],["T6","14:45","23:15"],["T6","14:45","23:15"],["T6","14:45","23:15"],["D"],["D"]]]}};
+const MONTHS=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DOWS=["L","M","X","J","V","S","D"];
+const DOWL=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+const DEFAULT_CFG={cuadro:"u27",anchor:"2027-01-11",startDate:"2027-01-13",year:2027,annualHours:1592,vacHours:"0",bajaHours:"cuadro"};
+
+/* ---------- utilidades de fechas (UTC para evitar líos con el cambio de hora) ---------- */
+const DAY=86400000;
+const parse=s=>{const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)};
+const fmt=t=>new Date(t).toISOString().slice(0,10);
+const dowOf=t=>(new Date(t).getUTCDay()+6)%7;
+const mod=(a,n)=>((a%n)+n)%n;
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const longDate=s=>{const t=parse(s),d=new Date(t);return `${DOWL[dowOf(t)]} ${d.getUTCDate()} de ${MONTHS[d.getUTCMonth()]}`};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mins=s=>{const [h,m]=s.split(":").map(Number);return h*60+m};
+const hfmt=m=>`${Math.floor(m/60)}h${m%60?String(m%60).padStart(2,"0"):""}`;
+
+/* ---------- lógica del cuadro ---------- */
+function pattern(){return PATTERNS[S.cfg.cuadro]||PATTERNS.u27}
+function kind(code){if(code==="D")return"d";if(code.startsWith("RES"))return"r";if(code[0]==="N"||code.startsWith("TN"))return"n";if(code[0]==="T")return"t";return"m"}
+function shiftFor(startWeek,dateStr){
+  const P=pattern(),n=P.weeks.length,t=parse(dateStr);
+  if(dateStr<(S.cfg.startDate||S.cfg.anchor))return {code:"–",k:"x",start:null,end:null,mins:0,week:"–"};
+  const w=Math.floor((t-parse(S.cfg.anchor))/DAY/7);
+  let si=P.labels.indexOf(Number(startWeek)); if(si<0)si=0;
+  const idx=mod(si+w,n),e=P.weeks[idx][dowOf(t)];
+  const code=e[0],k=kind(code);
+  let m=0; if(e[1]){m=mins(e[2])-mins(e[1]);if(m<=0)m+=1440}else if(e[3]){m=mins(e[3])}
+  return {code,k,start:e[1],end:e[2],mins:m,week:P.labels[idx]};
+}
+const KLABEL={m:"Mañana",t:"Tarde",n:"Noche",r:"Reserva",d:"Descanso",v:"Vacaciones",b:"Baja",x:"Fuera de cuadro"};
+const ABS=k=>k==="v"||k==="b";
+const NOTIME=k=>k==="d"||ABS(k);
+const absMins=(k,base)=>k==="v"?base.mins:(S.cfg.bajaHours==="cuadro"?base.mins:0);
+/* Semana con vacaciones: cuenta como máximo el tope semanal (36:04 por defecto), repartido por días; nunca se ganan horas */
+const vacWeekMins=()=>{const v=String(S.cfg.vacWeek||"36:04");return /^\d{1,2}:\d{2}$/.test(v)?mins(v):2164};
+function weekCredit(days){const vd=days.filter(s=>s.k==="v");const sched=vd.reduce((a,s)=>a+s.mins,0);
+  const cap=Math.round(vd.length*vacWeekMins()/7),credit=Math.min(sched,cap);
+  return {ratio:sched>0?credit/sched:1,loss:sched-credit};}
+const vacOf=(pid,ds)=>S.vacations.find(v=>v.personId===pid&&v.from<=ds&&ds<=v.to);
+function durOf(start,end,hours,k){if(NOTIME(k))return 0;if(start&&end){let m=mins(end)-mins(start);if(m<=0)m+=1440;return m}if(hours)return mins(hours);return 0}
+/* Turno real de una persona: el del cuadro, o el cambiado a mano ese día */
+function eff(p,ds){
+  const base=shiftFor(p.startWeek,ds),o=S.overrides[p.id+"_"+ds];
+  if(!o){const v=vacOf(p.id,ds);if(v){const k=v.type==="baja"?"b":"v";return {code:k==="b"?"BAJA":"VAC",k,start:null,end:null,mins:absMins(k,base),week:base.week,manual:false,vac:v,base}}return base}
+  const k=o.k||kind(o.code||"D");
+  return {code:o.code||(k==="d"?"D":"?"),k,start:o.start||null,end:o.end||null,mins:ABS(k)?absMins(k,base):durOf(o.start,o.end,o.hours,k),week:base.week,manual:true,base,fromReq:o.fromReq||null};
+}
+function presetsFor(k){const seen=new Map();for(const P of [pattern()])for(const wk of P.weeks)for(const e of wk){if(kind(e[0])!==k||k==="d")continue;const key=e.join("|");if(!seen.has(key))seen.set(key,{code:e[0],start:e[1],end:e[2],hours:e[3]})}return [...seen.values()].sort((a,b)=>(a.code+a.start).localeCompare(b.code+b.start))}
+
+/* ---------- almacenamiento: Firebase (Firestore) ---------- */
+const FIREBASE_CONFIG = {"apiKey": "AIzaSyBc2TQegO48gG-6AzoM2L5K1qV9Iq0ClN8", "authDomain": "cuadro-usis.firebaseapp.com", "projectId": "cuadro-usis", "storageBucket": "cuadro-usis.firebasestorage.app", "messagingSenderId": "335161788801", "appId": "1:335161788801:web:e183ecf23dc4ea21948080"};
+const FB_VER = "10.12.2";
+const S={cfg:{...DEFAULT_CFG},people:[],requests:[],overrides:{},vacations:[],pins:{},sheet:null,uid:null,myPid:null,tab:"cuadro",viewSel:null,day:todayStr(),readOnly:false,ready:false};
+let F=null,DB=null,AUTH=null;
+const LS={get(k){try{return JSON.parse(localStorage.getItem("usi:"+k)||"null")}catch(e){return null}},set(k,v){try{localStorage.setItem("usi:"+k,JSON.stringify(v))}catch(e){}}};
+const store={
+  subscribe(coll,cb){return F.onSnapshot(F.collection(DB,coll),s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>{console.warn(coll,e);if(e.code!=="permission-denied")toast("Sin conexión. Se actualizará al volver la red.")})},
+  put(coll,id,data){return F.setDoc(F.doc(DB,coll,id),data)},
+  patch(coll,id,data){return F.updateDoc(F.doc(DB,coll,id),data)},
+  remove(coll,id){return F.deleteDoc(F.doc(DB,coll,id))}
+};
+const handlers={},unsubs={};
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+async function safe(p,okMsg){try{await p;okMsg&&toast(okMsg);return true}catch(e){console.warn(e);if(e&&e.code==="permission-denied")toast("No tienes permiso para cambiar esto");else toast("No se ha podido guardar. Prueba otra vez.");return false}}
+function sub(k,fn){if(unsubs[k])return;handlers[k]=fn;unsubs[k]=store.subscribe(k,fn)}
+function unsubAll(keep){for(const k of Object.keys(unsubs)){if(keep.includes(k))continue;unsubs[k]();delete unsubs[k]}}
+
+function bindPublic(){
+  sub("people",list=>{S.people=list.sort((a,b)=>(a.startWeek-b.startWeek)||String(a.name).localeCompare(b.name));if(S.ready)render();else renderLogin()});
+  sub("config",list=>{const c=list.find(x=>x.id==="main");S.cfg={...DEFAULT_CFG,...(c||{})};if(S.ready)render();else renderLogin()});
+}
+function bindPrivate(){
+  sub("vacations",list=>{S.vacations=list.sort((a,b)=>a.from.localeCompare(b.from));render()});
+  sub("requests",list=>{S.requests=list.sort((a,b)=>a.date.localeCompare(b.date));render()});
+  sub("overrides",list=>{S.overrides=Object.fromEntries(list.map(o=>[o.id,o]));render()});
+  if(isAdm())sub("pins",list=>{S.pins=Object.fromEntries(list.map(p=>[p.id,p.pin]));render()});
+}
+
+async function boot(){
+  try{
+    const [app,auth,fs]=await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-auth.js`),
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`)]);
+    const fa=app.initializeApp(FIREBASE_CONFIG);
+    F=fs;
+    try{DB=fs.initializeFirestore(fa,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})})}catch(e){DB=fs.getFirestore(fa)}
+    AUTH=auth.getAuth(fa);
+    await auth.setPersistence(AUTH,auth.browserLocalPersistence).catch(()=>{});
+    const user=AUTH.currentUser||await new Promise(res=>{const u=auth.onAuthStateChanged(AUTH,x=>{u();res(x)})});
+    const u=user||(await auth.signInAnonymously(AUTH)).user;
+    S.uid=u.uid;
+    bindPublic();
+    const ss=await fs.getDoc(fs.doc(DB,"sessions",S.uid)).catch(()=>null);
+    if(ss&&ss.exists()){S.myPid=ss.data().personId;await startApp()}
+    else renderLogin();
+  }catch(e){
+    console.error(e);
+    $("#loginBox").innerHTML=`<h1>Cuadro USI</h1><p class="err">No se ha podido conectar. Comprueba la conexión a internet y vuelve a abrir la app.</p><button class="btn" onclick="location.reload()">Reintentar</button>`;
+  }
+}
+async function startApp(){
+  // espera a tener la lista de personas para saber si eres administrador
+  for(let i=0;i<50&&!S.people.length;i++)await new Promise(r=>setTimeout(r,100));
+  S.ready=true;$("#login").hidden=true;
+  bindPrivate();render();
+  if(S.tab==="cuadro")go("cuadro");
+}
+
+/* ---------- entrar con nombre y PIN ---------- */
+let L={pid:null,err:""};
+function renderLogin(){
+  if(S.ready)return;
+  const box=$("#loginBox");if(!box)return;
+  if(!S.people.length){box.innerHTML=`<h1>Cuadro USI</h1><div class="loading"><span class="spin"></span>Cargando el equipo…</div>`;return}
+  const p=L.pid?personById(L.pid):null;
+  if(!p){
+    box.innerHTML=`<div><h1>Cuadro USI</h1><p class="muted" style="margin:4px 0 0">Toca tu nombre para entrar.</p></div>
+      <div class="who-pick">${S.people.map(x=>`<button type="button" data-lp="${esc(x.id)}">${esc(x.name)}<small>Semana ${x.startWeek}</small></button>`).join("")}</div>`;
+    box.querySelectorAll("[data-lp]").forEach(b=>b.addEventListener("click",()=>{L={pid:b.dataset.lp,err:""};renderLogin()}));
+    return;
+  }
+  const firstAdmin=S.cfg.adminPerson===p.id&&!S.cfg.adminPinSet;
+  box.innerHTML=`<div><h1>Hola, ${esc(p.name)}</h1><p class="muted" style="margin:4px 0 0">${firstAdmin?"Eres el administrador. Crea tu PIN de 4 números; lo usarás para entrar.":"Escribe tu PIN de 4 números. Si no lo tienes, pídeselo al administrador."}</p></div>
+    <form id="pinForm" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+      <label class="f" for="pin1">${firstAdmin?"Nuevo PIN":"PIN"}<input class="pin" id="pin1" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" required></label>
+      ${firstAdmin?`<label class="f" for="pin2">Repite el PIN<input class="pin" id="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" required></label>`:""}
+      <p class="err" id="pinErr">${esc(L.err)}</p>
+      <button class="btn" type="submit" id="pinGo">${firstAdmin?"Crear PIN y entrar":"Entrar"}</button>
+      <button class="btn ghost" type="button" id="pinBack">No soy ${esc(p.name)}</button>
+    </form>`;
+  $("#pin1").focus();
+  $("#pinBack").addEventListener("click",()=>{L={pid:null,err:""};renderLogin()});
+  $("#pinForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const pin=$("#pin1").value.trim();
+    if(!/^\d{4}$/.test(pin)){$("#pinErr").textContent="El PIN son 4 números.";return}
+    if(firstAdmin&&$("#pin2").value.trim()!==pin){$("#pinErr").textContent="Los dos PIN no coinciden.";return}
+    $("#pinGo").disabled=true;$("#pinErr").textContent="";
+    try{
+      if(firstAdmin)await F.setDoc(F.doc(DB,"pins",p.id),{pin});
+      await F.setDoc(F.doc(DB,"sessions",S.uid),{personId:p.id,pin,at:new Date().toISOString()});
+      S.myPid=p.id;
+      if(firstAdmin)await F.updateDoc(F.doc(DB,"config","main"),{adminPinSet:true}).catch(()=>{});
+      await startApp();
+    }catch(err){
+      console.warn(err);
+      L.err=err&&err.code==="permission-denied"?"PIN incorrecto. Si no lo tienes, pídeselo al administrador.":"No se ha podido entrar. Comprueba la conexión.";
+      $("#pinErr").textContent=L.err;$("#pinGo").disabled=false;$("#pin1").value="";$("#pin1").focus();
+    }
+  });
+}
+async function logout(){
+  try{await F.deleteDoc(F.doc(DB,"sessions",S.uid))}catch(e){}
+  unsubAll(["people","config"]);
+  Object.assign(S,{ready:false,myPid:null,requests:[],overrides:{},vacations:[],pins:{},sheet:null,viewSel:null,tab:"cuadro"});
+  L={pid:null,err:""};$("#sheetRoot").innerHTML="";$("#login").hidden=false;renderLogin();
+}
+const isAdm=()=>me()?.admin===true;
+
+/* ---------- quién soy ---------- */
+const me=()=>S.people.find(p=>p.id===S.myPid);
+const personById=id=>S.people.find(p=>p.id===id);
+const pname=id=>personById(id)?.name||"Alguien";
+const initials=n=>String(n||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+
+/* ---------- render ---------- */
+const $=s=>document.querySelector(s);
+function render(){
+  if(!S.ready)return;
+  const m=me();
+  $("#meName").innerHTML=m?`<b>${esc(m.name)}</b>`:"Identifícate";
+  $("#meDot").textContent=m?initials(m.name):"?";
+  $("#hdrSub").textContent=`${pattern().name} · ${S.cfg.year}`;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab));
+  const open=m?S.requests.filter(r=>r.date>=todayStr()&&((r.status==="abierta"&&r.personId!==m.id&&["d","r"].includes(eff(m,r.date).k))||(r.status==="propuesta"&&r.personId===m.id))).length:0;
+  const bd=$("#reqBadge");bd.hidden=!open;bd.textContent=open;
+  const v=$("#view");
+  v.innerHTML=({cuadro:viewCuadro,dia:viewDia,peticiones:viewPeticiones,equipo:viewEquipo})[S.tab]();
+  wire(v);
+  if(S.sheet)renderSheet();
+}
+
+function modeNote(){return ""}
+
+function selectOptions(){
+  const m=me();const P=pattern();
+  let sel=S.viewSel||(m?"p:"+m.id:"w:"+P.labels[0]);
+  let o=`<optgroup label="Personas">`;
+  if(!S.people.length)o+=`<option disabled>Aún no hay personas en el equipo</option>`;
+  for(const p of S.people)o+=`<option value="p:${esc(p.id)}" ${sel==="p:"+p.id?"selected":""}>${esc(p.name)}${m&&m.id===p.id?" (yo)":""} · sem. ${p.startWeek}</option>`;
+  o+=`</optgroup><optgroup label="Por semana de inicio en enero">`;
+  for(const l of P.labels)o+=`<option value="w:${l}" ${sel==="w:"+l?"selected":""}>Empieza en la semana ${l}</option>`;
+  return [o+"</optgroup>",sel];
+}
+
+function saldoBlock(tot,done,Y,tod,loss=0){
+  const yr=String(Y),past=tod.slice(0,4)>yr,future=tod.slice(0,4)<yr;
+  let h=`<div class="saldo"><span>Horas trabajadas en ${Y}</span><b>${hfmt(tot)}</b>`;
+  if(!future)h+=`<span>Hechas ${past?"en el año":"hasta hoy"}</span><b>${hfmt(done)}</b>`;
+  h+=`<span>Horas que palmas en vacaciones</span><b class="${loss?"neg":""}">${loss?"−"+hfmt(loss):"0h"}</b>`;
+  const sd=S.cfg.startDate||S.cfg.anchor;
+  if(sd>`${Y}-01-01`&&sd.startsWith(String(Y)))h+=`<span class="muted" style="grid-column:1/-1;font-size:12px">No incluye los días anteriores al ${longDate(sd)} (calendario anterior, en gris).</span>`;
+  return h+`</div>`;
+}
+function viewCuadro(){
+  const [opts,sel]=selectOptions();
+  let start,title;
+  if(sel.startsWith("p:")){const p=personById(sel.slice(2));start=p?p.startWeek:pattern().labels[0];title=p?p.name:"—"}
+  else{start=Number(sel.slice(2));title=`Semana ${start}`}
+  const Y=S.cfg.year,tod=todayStr();
+  const pid=sel.startsWith("p:")?sel.slice(2):null;
+  const person=pid?personById(pid):null;
+  const sh=ds=>person?eff(person,ds):shiftFor(start,ds);
+  const myReq={};for(const r of S.requests)if(pid&&r.personId===pid)myReq[r.date]=r.status;
+  const cnt={m:0,t:0,n:0,r:0,d:0,v:0,b:0,x:0};let tot=0,done=0,lossTot=0;const lossSeen=new Set();
+  let months="";
+  for(let mo=0;mo<12;mo++){
+    const first=Date.UTC(Y,mo,1),last=Date.UTC(Y,mo+1,0);
+    let cells="",mm=0;
+    for(let wk=first-dowOf(first)*DAY;wk<=last;wk+=7*DAY){
+      let wmins=0;
+      const wdays=[0,1,2,3,4,5,6].map(i=>sh(fmt(wk+i*DAY))),wc=weekCredit(wdays);
+      for(let i=0;i<7;i++){
+        const t=wk+i*DAY,ds=fmt(t),s=wdays[i],val=s.k==="v"?0:s.mins;wmins+=val;
+        if(t<first||t>last){cells+=`<div class="day empty"></div>`;continue}
+        cnt[s.k]++;tot+=val;mm+=val;if(ds<=tod)done+=val;
+        const f=myReq[ds]?`<span class="flag ${myReq[ds]==="cubierta"?"ok":""}"></span>`:"";
+        cells+=`<button type="button" class="day k-${s.k} ${ds===tod?"today":""} ${s.manual?"manual":""}" data-day="${ds}" aria-label="${longDate(ds)}: ${esc(s.code)}${s.manual?" (cambiado)":""}">${f}<span class="n">${new Date(t).getUTCDate()}</span><span class="c ${s.code.length>3?"long":""}">${s.code==="D"?"·":esc(s.code)}</span></button>`;
+      }
+      wmins=Math.round(wmins);
+      if(wc.loss&&wk>=first-6*DAY&&wk+6*DAY<=last+6*DAY&&!lossSeen.has(wk)){lossSeen.add(wk);lossTot+=wc.loss}
+      const vcred=Math.round(wdays.reduce((a,x)=>a+(x.k==="v"?x.mins*wc.ratio:0),0)),wshow=wmins+vcred;
+      cells+=`<div class="wkh" title="Horas de la semana (lunes a domingo)${vcred?`. Incluye ${hfmt(vcred)} de vacaciones, que no suman al total del mes ni del año`:""}${wc.loss?". Palmas "+hfmt(wc.loss):""}">${hfmt(wshow)}${wc.loss?`<small class="loss">−${hfmt(wc.loss)}</small>`:`<small>sem ${sh(fmt(wk)).week}</small>`}</div>`;
+    }
+    months+=`<section class="card month" id="m${mo}"><h3><span style="text-transform:capitalize">${MONTHS[mo]}</span><small>${hfmt(Math.round(mm))} en el mes</small></h3>
+      <div class="grid7">${DOWS.map(d=>`<div class="dow">${d}</div>`).join("")}<div class="dow" style="text-align:right">Horas</div>${cells}</div></section>`;
+  }
+  const sd=S.cfg.startDate||S.cfg.anchor,w1=shiftFor(start,sd).week;
+  /* Fines de semana trabajados: viernes de noche/tarde-noche, o sábado/domingo con turno */
+  const WK=["m","t","n"];let fdsTot=0,fdsWork=0,fdsDone=0,fdsRes=0,fdsRest=0,fdsAbs=0;
+  for(let t=Date.UTC(Y,0,1);t<=Date.UTC(Y,11,31);t+=DAY){if(dowOf(t)!==5||fmt(t+DAY)<(S.cfg.startDate||S.cfg.anchor))continue;fdsTot++;
+    const fr=sh(fmt(t-DAY)).k,sa=sh(fmt(t)).k,su=sh(fmt(t+DAY)).k;
+    if(fr==="n"||WK.includes(sa)||WK.includes(su)){fdsWork++;if(fmt(t-DAY)<=tod)fdsDone++}
+    else if(sa==="r"||su==="r")fdsRes++;
+    else if(ABS(sa)||ABS(su))fdsAbs++;
+    else fdsRest++;}
+  const yrNow=tod.slice(0,4)===String(Y);
+  return `${modeNote()}
+  <section class="card">
+    <label class="f" for="selView">Ver el cuadro de</label>
+    <select id="selView">${opts}</select>
+    <div class="stats" style="margin-top:12px">
+      <div class="stat k-m"><b>${cnt.m}</b><span>Mañanas</span></div>
+      <div class="stat k-t"><b>${cnt.t}</b><span>Tardes</span></div>
+      <div class="stat k-n"><b>${cnt.n}</b><span>Noches</span></div>
+      <div class="stat k-r"><b>${cnt.r}</b><span>Reserva</span></div>
+    </div>
+    <div class="fdsrow" title="Fin de semana trabajado: viernes de noche o tarde-noche, o sábado o domingo con turno"><span class="lbl">Fines de<br>semana</span>
+      <div class="w"><b>${fdsWork}</b>trabajados${yrNow?`<br>${fdsDone} hechos`:""}</div><div><b>${fdsRes}</b>reserva</div><div><b>${fdsRest}</b>descanso${fdsAbs?`<br>+${fdsAbs} vac./baja`:""}</div></div>
+    ${saldoBlock(Math.round(tot),Math.round(done),Y,tod,lossTot)}
+    <p class="muted" style="margin:10px 0 0;font-size:13px">${esc(title)}: ${cnt.d} días de descanso, ${cnt.v} de vacaciones${cnt.b?`, ${cnt.b} de baja`:""}. El cuadro nuevo arranca el ${longDate(sd)} en su semana ${w1}. Los días anteriores salen en gris.</p>
+  </section>
+  <div class="legend"><span><i class="k-m"></i>Mañana (M)</span><span><i class="k-t"></i>Tarde (T)</span><span><i class="k-n"></i>Noche (N)</span><span><i class="k-r"></i>Reserva (RES)</span><span><i class="k-v"></i>Vacaciones (VAC)</span><span><i class="k-b"></i>Baja</span><span><i></i>Descanso</span><span><i class="k-x" style="border-style:dashed"></i>Fuera de cuadro</span><span><i style="background:var(--danger);border-radius:50%"></i>Día pedido</span><span><i style="border:1.5px dashed var(--muted)"></i>Cambiado a mano</span></div>
+  <p class="muted" style="margin:-6px 0 0;font-size:13px">Toca un día para cambiar el turno o ver quién trabaja. La columna de la derecha suma las horas de cada semana, de lunes a domingo.</p>
+  ${months}`;
+}
+
+function dayLists(ds){
+  const work=[],res=[],rest=[],vac=[],baja=[];
+  for(const p of S.people){const s=eff(p,ds);(s.k==="x"?[]:s.k==="d"?rest:s.k==="r"?res:s.k==="v"?vac:s.k==="b"?baja:work).push({p,s})}
+  work.sort((a,b)=>(a.s.start||"").localeCompare(b.s.start||""));
+  return {work,res,rest,vac,baja};
+}
+function personLine({p,s},extra=""){
+  const m=me();
+  const time=s.start?`${s.start}–${s.end}`:s.k==="r"?`Reserva · ${hfmt(s.mins)} computables`:s.k==="v"?"Vacaciones":s.k==="b"?"De baja":"Descanso";
+  return `<div class="li"><span class="pill sh k-${s.k}">${s.code==="D"?"D":esc(s.code)}</span><div class="grow"><div class="who">${esc(p.name)}${m&&m.id===p.id?" <span class='muted'>(yo)</span>":""}</div><div class="sub">${time} · semana ${s.week}${s.manual?` · <b>cambiado</b> (cuadro: ${esc(s.base.code)})`:""}</div></div>${extra}</div>`;
+}
+
+function viewDia(){
+  const ds=S.day,{work,res,rest,vac,baja}=dayLists(ds),m=me();
+  const reqs=S.requests.filter(r=>r.date===ds);
+  const mine=m?eff(m,ds):null;
+  const canAsk=m&&!NOTIME(mine.k)&&!S.readOnly&&!reqs.some(r=>r.personId===m.id);
+  return `${modeNote()}
+  <section class="card">
+    <div class="daynav"><button class="btn ghost" data-shift="-1" aria-label="Día anterior">‹</button>
+      <input type="date" id="dayPick" value="${ds}" class="grow"><button class="btn ghost" data-shift="1" aria-label="Día siguiente">›</button></div>
+    <div class="bigdate" style="margin-top:12px">${longDate(ds)}</div>
+    ${m?`<p style="margin:4px 0 0">Tú: <span class="pill sh k-${mine.k}">${esc(mine.code)}</span> ${mine.start?`${mine.start}–${mine.end}`:KLABEL[mine.k]}</p>`:""}
+    ${canAsk?`<button class="btn" style="margin-top:12px;width:100%" data-ask="${ds}">Pedir este día libre</button>`:""}
+  </section>
+  ${!S.people.length?`<div class="card muted">Añade al equipo en la pestaña Equipo para ver quién trabaja cada día.</div>`:`
+  ${reqs.length?`<section class="card"><h2>Peticiones de este día</h2>${reqs.map(reqCard).join("")}</section>`:""}
+  <section class="card"><h2>Trabajan · ${work.length}</h2><div class="list">${work.map(x=>personLine(x)).join("")||"<p class='muted'>Nadie</p>"}</div></section>
+  <section class="card"><h2>De reserva · ${res.length}</h2><div class="list">${res.map(x=>personLine(x)).join("")||"<p class='muted'>Nadie</p>"}</div></section>
+  ${baja.length?`<section class="card"><h2>De baja · ${baja.length}</h2><div class="list">${baja.map(x=>personLine(x)).join("")}</div></section>`:""}
+  ${vac.length?`<section class="card"><h2>De vacaciones · ${vac.length}</h2><div class="list">${vac.map(x=>personLine(x)).join("")}</div></section>`:""}
+  <section class="card"><h2>Descansan · ${rest.length}</h2><div class="list">${rest.map(x=>personLine(x)).join("")||"<p class='muted'>Nadie</p>"}</div></section>`}`;
+}
+
+function reqCard(r){
+  const m=me(),req=personById(r.personId);
+  const s0=req?eff(req,r.date):null,s=s0&&(ABS(s0.k)||s0.fromReq===r.id)?s0.base:s0;
+  const {rest,res}=dayLists(r.date);
+  const cands=[...rest.filter(x=>x.p.id!==r.personId).map(x=>`<span class="cand">${esc(x.p.name)}</span>`),...res.map(x=>`<span class="cand r">${esc(x.p.name)} · reserva</span>`)].join("");
+  const iAmCand=m&&m.id!==r.personId&&["d","r"].includes(eff(m,r.date).k);
+  let actions="";
+  if(!S.readOnly&&m){
+    if(r.status==="abierta"&&iAmCand){actions+=`<button class="btn small" data-cover="${esc(r.id)}">Me quedo el turno</button>`;
+      if(req)actions+=`<button class="btn small ghost" data-swapopen="${esc(r.id)}">Te lo cambio por otro día</button>`;}
+    if(r.status==="propuesta"&&r.personId===m.id)actions+=`<button class="btn small" data-swapok="${esc(r.id)}">Aceptar el cambio</button><button class="btn small ghost" data-swapno="${esc(r.id)}">Rechazar</button>`;
+    if(r.status==="propuesta"&&r.coverId===m.id)actions+=`<button class="btn small ghost" data-swapno="${esc(r.id)}">Retirar propuesta</button>`;
+    if(r.status==="cubierta"&&r.coverId===m.id)actions+=`<button class="btn small ghost" data-uncover="${esc(r.id)}">Ya no puedo</button>`;
+    if(r.personId===m.id)actions+=`<button class="btn small danger" data-cancel="${esc(r.id)}">Anular petición</button>`;
+  }
+  return `<div class="req">
+    <div class="row"><div class="grow"><div class="who" style="font-weight:600">${esc(req?.name||"Alguien")} pide el ${longDate(r.date)}</div>
+      <div class="sub muted" style="font-size:13px">Su turno: ${s?`<span class="sh">${esc(s.code)}</span> ${s.start?`${s.start}–${s.end}`:KLABEL[s.k]}`:"—"}</div></div>
+      <span class="tag ${r.status==="cubierta"?"done":r.status==="propuesta"?"prop":"open"}">${r.status==="cubierta"?(r.swapDate?"Cambiada":"Cubierta"):r.status==="propuesta"?"Propuesta":"Abierta"}</span></div>
+    ${r.note?`<div style="font-size:14px">“${esc(r.note)}”</div>`:""}
+    ${r.swapDate&&r.status!=="abierta"?`<div style="font-size:14px"><b>${esc(pname(r.coverId))}</b> ${r.status==="cubierta"?"le cubre":"se ofrece a cubrirle"} el ${longDate(r.date)} y, a cambio, ${esc(req?.name||"")} ${r.status==="cubierta"?"le hace":"le haría"} el <b>${longDate(r.swapDate)}</b> (${swapDesc(r)}).</div>`:
+    r.status==="cubierta"?`<div style="font-size:14px">Lo cubre <b>${esc(pname(r.coverId))}</b>. ${esc(req?.name||"")} le debe un día.</div>`:`<div><div class="muted" style="font-size:12px;margin-bottom:4px">Pueden cogerlo (descansan o están de reserva):</div><div class="cands">${cands||"<span class='muted'>Nadie libre ese día</span>"}</div></div>`}
+    ${actions?`<div class="row">${actions}</div>`:""}
+    ${S.swapPick===r.id?swapPicker(r):""}
+  </div>`;
+}
+
+function swapDesc(r){const c=personById(r.coverId);if(!c)return "";const x=S.overrides[r.personId+"_"+r.swapDate];const s=x&&r.status==="cubierta"?eff(personById(r.personId),r.swapDate):eff(c,r.swapDate);return `${esc(s.code)}${s.start?` ${s.start}–${s.end}`:""}`}
+function swapOptions(r){
+  const m=me(),req=personById(r.personId);if(!m||!req)return [];
+  const out=[],tod=todayStr(),Y=S.cfg.year,start=Math.max(parse(tod),parse(r.date)-60*DAY,Date.UTC(Y,0,1)),end=Math.min(parse(r.date)+90*DAY,Date.UTC(Y,11,31));
+  for(let t=start;t<=end&&out.length<40;t+=DAY){const ds=fmt(t);if(ds===r.date)continue;
+    const a=eff(m,ds),b=eff(req,ds);if(["m","t","n"].includes(a.k)&&!a.fromReq&&b.k==="d")out.push({ds,s:a})}
+  return out;
+}
+function swapPicker(r){
+  const o=swapOptions(r);
+  if(!o.length)return `<div class="note">No hay días cercanos en los que tú trabajes y ${esc(pname(r.personId))} descanse.</div>`;
+  return `<div class="note" style="display:grid;gap:8px"><label class="f" for="swapDate">Elige el día que te haría ${esc(pname(r.personId))} (tú trabajas y él o ella descansa)<select id="swapDate">${o.map(x=>`<option value="${x.ds}">${longDate(x.ds)} · ${esc(x.s.code)} ${x.s.start}–${x.s.end}</option>`).join("")}</select></label>
+    <div class="row"><button class="btn small" data-swapsend="${esc(r.id)}">Proponer el cambio</button><button class="btn small ghost" data-swapclose="1">Cancelar</button></div></div>`;
+}
+function owedBalance(){
+  const m=me();if(!m)return "";const bal={};
+  for(const r of S.requests){if(r.status!=="cubierta"||r.swapDate)continue;
+    if(r.coverId===m.id)bal[r.personId]=(bal[r.personId]||0)+1;
+    if(r.personId===m.id)bal[r.coverId]=(bal[r.coverId]||0)-1;}
+  const rows=Object.entries(bal).filter(([,n])=>n);
+  if(!rows.length)return "";
+  return `<section class="card"><h2>Días entre compañeros</h2><div class="list">${rows.map(([id,n])=>`<div class="li"><div class="grow who">${esc(pname(id))}</div><b class="${n>0?"pos":"neg"}">${n>0?`Te debe ${n} día${n>1?"s":""}`:`Le debes ${-n} día${n<-1?"s":""}`}</b></div>`).join("")}</div><p class="muted" style="margin:8px 0 0;font-size:12px">Cuenta los días cubiertos sin cambio. Los intercambios ya quedan saldados.</p></section>`;
+}
+function viewPeticiones(){
+  const m=me(),tod=todayStr();
+  const up=S.requests.filter(r=>r.date>=tod);
+  const forMe=m?up.filter(r=>r.status==="abierta"&&r.personId!==m.id&&["d","r"].includes(eff(m,r.date).k)):[];
+  const mine=m?up.filter(r=>(r.personId===m.id||r.coverId===m.id)&&!forMe.includes(r)):[];
+  const rest=up.filter(r=>!forMe.includes(r)&&!mine.includes(r));
+  const draft=S.draftDate||"";
+  let preview="";
+  if(draft){const {rest:rr,res}=dayLists(draft);const s=m?eff(m,draft):null;
+    preview=`<div class="note" style="margin-top:10px">${s?`Ese día tienes <b class="sh">${esc(s.code)}</b>${s.start?` (${s.start}–${s.end})`:""}. `:""}Descansan ${rr.filter(x=>!m||x.p.id!==m.id).length}: ${rr.filter(x=>!m||x.p.id!==m.id).map(x=>esc(x.p.name)).join(", ")||"nadie"}. De reserva: ${res.map(x=>esc(x.p.name)).join(", ")||"nadie"}.</div>`}
+  return `${modeNote()}
+  ${m&&!S.readOnly?`<section class="card"><h2>Pedir un día libre</h2>
+    <div class="row"><label class="f grow" for="reqDate">Día<input type="date" id="reqDate" value="${draft}" min="${tod}"></label></div>
+    <label class="f" for="reqNote" style="margin-top:8px">Nota (opcional)<textarea id="reqNote" placeholder="Por ejemplo: cambio el turno por otro día"></textarea></label>
+    ${preview}
+    <button class="btn" id="reqSend" style="margin-top:10px;width:100%" ${draft?"":"disabled"}>Publicar petición</button></section>`
+  :!m?`<div class="card">Para pedir días, primero dinos quién eres en la pestaña Equipo.</div>`:""}
+  ${owedBalance()}
+  ${forMe.length?`<section class="card"><h2>Puedes cubrir · ${forMe.length}</h2><div style="display:flex;flex-direction:column;gap:8px">${forMe.map(reqCard).join("")}</div></section>`:""}
+  ${mine.length?`<section class="card"><h2>Las mías</h2><div style="display:flex;flex-direction:column;gap:8px">${mine.map(reqCard).join("")}</div></section>`:""}
+  <section class="card"><h2>Todas las peticiones · ${rest.length}</h2>${rest.length?`<div style="display:flex;flex-direction:column;gap:8px">${rest.map(reqCard).join("")}</div>`:`<p class="muted" style="margin:0">No hay más peticiones pendientes.</p>`}</section>`;
+}
+
+function viewVacaciones(){
+  const m=me(),canAll=isAdm()&&!S.readOnly,canOwn=!!m&&!S.readOnly;
+  const pick=canAll?S.people:(m?[m]:[]);
+  const days=v=>Math.round((parse(v.to)-parse(v.from))/DAY)+1;
+  const canDel=v=>!S.readOnly&&(isAdm()||(m&&v.personId===m.id));
+  const rows=S.vacations.filter(v=>personById(v.personId)).map(v=>`<div class="li"><span class="pill sh k-${v.type==="baja"?"b":"v"}">${v.type==="baja"?"BAJA":"VAC"}</span><div class="grow"><div class="who">${esc(pname(v.personId))}</div><div class="sub">Del ${longDate(v.from)} al ${longDate(v.to)} · ${days(v)} días</div></div>${canDel(v)?`<button class="btn small danger" data-vdel="${esc(v.id)}">Quitar</button>`:""}</div>`).join("");
+  return `<section class="card"><h2>Vacaciones y bajas</h2>
+    ${pick.length&&(canAll||canOwn)?`<div style="display:grid;gap:8px;margin-bottom:10px">
+      ${canAll?`<label class="f" for="vacWho">Persona<select id="vacWho">${pick.map(p=>`<option value="${esc(p.id)}" ${m&&m.id===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`:""}
+      <label class="f" for="vacType">Tipo<select id="vacType"><option value="vac">Vacaciones</option><option value="baja">Baja (enfermedad)</option></select></label>
+      <div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="vacFrom">Desde<input type="date" id="vacFrom"></label><label class="f" for="vacTo">Hasta<input type="date" id="vacTo"></label></div>
+      <label class="row" for="vacAsk" style="font-size:13px;gap:8px"><input type="checkbox" id="vacAsk"> Pedir a los compañeros que cubran mis turnos de esos días</label>
+      <button class="btn" id="vacAdd">Añadir</button></div>`:`<p class="muted" style="margin:0 0 8px;font-size:13px">${m?"":"Identifícate arriba para añadir tus vacaciones o una baja."}</p>`}
+    <div class="list">${rows||"<p class='muted' style='margin:0'>Todavía no hay vacaciones ni bajas apuntadas.</p>"}</div></section>`;
+}
+function viewEquipo(){
+  const m=me(),P=pattern();
+  const canAdmin=isAdm();
+  let who=`<section class="card"><h2>Tu sesión</h2><div class="row"><div class="grow">Has entrado como <b>${esc(m?.name||"")}</b>${canAdmin?" · administrador":""}.</div><button class="btn small ghost" id="logout">Cerrar sesión</button></div>
+    <p class="muted" style="margin:8px 0 0;font-size:12px">Este móvil te recuerda. Cierra sesión solo si lo va a usar otra persona.</p></section>`;
+  const vacSec=viewVacaciones();
+  if(!canAdmin)return modeNote()+who+vacSec+`<section class="card"><h2>Cuadro activo</h2><p style="margin:0">${esc(P.name)} · año ${S.cfg.year}</p></section>`;
+  const wkOpts=sel=>P.labels.map(l=>`<option value="${l}" ${Number(sel)===l?"selected":""}>Sem. ${l}</option>`).join("");
+  return `${modeNote()}${who}${vacSec}
+  <section class="card"><h2>Personas del equipo · ${S.people.length}</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:13px">Pon a cada persona con la semana del cuadro en la que empieza enero.</p>
+    <div>${S.people.map(p=>`<div class="edit-row"><input type="text" id="pn-${esc(p.id)}" value="${esc(p.name)}" data-pname="${esc(p.id)}" aria-label="Nombre"><select data-pweek="${esc(p.id)}" aria-label="Semana">${wkOpts(p.startWeek)}</select><button class="btn small danger" data-pdel="${esc(p.id)}" aria-label="Quitar">Quitar</button></div>
+      <div class="row" style="padding:0 0 8px;gap:8px;font-size:13px"><span class="muted">PIN</span><span class="pinbox">${S.pins[p.id]?esc(S.pins[p.id]):"—"}</span>${p.id===m?.id?`<button class="btn small ghost" data-pinset="${esc(p.id)}">Cambiar mi PIN</button>`:`<button class="btn small ghost" data-pingen="${esc(p.id)}">${S.pins[p.id]?"Nuevo PIN":"Crear PIN"}</button>`}</div>`).join("")}</div>
+    <p class="muted" style="margin:8px 0 0;font-size:12px">Pasa a cada uno su PIN en persona o por mensaje privado. Si alguien pierde el móvil, dale un PIN nuevo.</p>
+    <div class="edit-row" style="border-top:1px solid var(--line);margin-top:4px"><input type="text" id="newName" placeholder="Nombre"><select id="newWeek">${wkOpts(P.labels[0])}</select><button class="btn small" id="addP">Añadir</button></div>
+    ${S.people.length?"":`<button class="btn ghost" id="fillSlots" style="margin-top:8px;width:100%">Crear ${P.labels.length} puestos (uno por semana) para renombrarlos</button>`}
+  </section>
+  <section class="card"><h2>Ajustes del cuadro</h2>
+    <div style="display:grid;gap:10px">
+      <label class="f" for="cfgCuadro">Cuadro<select id="cfgCuadro">${Object.entries(PATTERNS).map(([k,v])=>`<option value="${k}" ${S.cfg.cuadro===k?"selected":""}>${esc(v.name)} · ${v.weeks.length} semanas</option>`).join("")}</select></label>
+      <label class="f" for="cfgYear">Año<input type="number" id="cfgYear" value="${S.cfg.year}" min="2024" max="2040"></label>
+      <label class="f" for="cfgAnchor">Lunes en que arranca el cuadro (cada uno en su semana de inicio)<input type="date" id="cfgAnchor" value="${S.cfg.anchor}"></label>
+      <label class="f" for="cfgStart">Primer día en que se aplica el cuadro<input type="date" id="cfgStart" value="${S.cfg.startDate||S.cfg.anchor}"></label>
+      <p class="muted" style="margin:0;font-size:13px">Los días anteriores salen en gris, sin turno ni horas, y no se pueden modificar.</p>
+      <label class="f" for="cfgVacW">Horas de una semana de vacaciones (horas:minutos)<input type="text" id="cfgVacW" inputmode="numeric" value="${esc(S.cfg.vacWeek||"36:04")}" placeholder="36:04"></label>
+      <p class="muted" style="margin:0;font-size:13px">En una semana de vacaciones cuentan como máximo estas horas. Si el cuadro marcaba más, la diferencia se pierde; si marcaba menos, no se gana nada.</p>
+      <label class="f" for="cfgBajaH">Un día de baja computa<select id="cfgBajaH"><option value="cuadro" ${S.cfg.bajaHours!=="0"?"selected":""}>Las horas del turno que tocaba</option><option value="0" ${S.cfg.bajaHours==="0"?"selected":""}>0 horas</option></select></label>
+    </div>
+  </section>`;
+}
+
+/* ---------- eventos ---------- */
+function wire(v){
+  const on=(sel,ev,fn)=>v.querySelectorAll(sel).forEach(el=>el.addEventListener(ev,fn));
+  on("#selView","change",e=>{S.viewSel=e.target.value;render()});
+  on("[data-day]","click",e=>{const ds=e.currentTarget.dataset.day,sel=v.querySelector("#selView")?.value||"";openSheet(ds,sel.startsWith("p:")?sel.slice(2):null,sel)});
+  on("#dayPick","change",e=>{if(e.target.value){S.day=e.target.value;render()}});
+  on("[data-shift]","click",e=>{S.day=fmt(parse(S.day)+Number(e.currentTarget.dataset.shift)*DAY);render()});
+  on("[data-ask]","click",e=>{S.draftDate=e.currentTarget.dataset.ask;go("peticiones")});
+  on("#reqDate","change",e=>{S.draftDate=e.target.value;const n=$("#reqNote")?.value;render();if(n&&$("#reqNote"))$("#reqNote").value=n});
+  on("#reqSend","click",async()=>{const m=me();if(!m||!S.draftDate)return;
+    if(S.requests.some(r=>r.personId===m.id&&r.date===S.draftDate)){toast("Ya tienes una petición para ese día");return}
+    const ok=await safe(store.put("requests",newId(),{personId:m.id,date:S.draftDate,note:($("#reqNote")?.value||"").trim().slice(0,200),status:"abierta",coverId:null,createdAt:new Date().toISOString()}),"Petición publicada");
+    if(ok){S.draftDate="";render()}});
+  on("[data-cover]","click",e=>coverReq(e.currentTarget.dataset.cover));
+  on("[data-swapopen]","click",e=>{S.swapPick=e.currentTarget.dataset.swapopen;render()});
+  on("[data-swapclose]","click",()=>{S.swapPick=null;render()});
+  on("[data-swapsend]","click",e=>{const id=e.currentTarget.dataset.swapsend,d=$("#swapDate")?.value,m=me();if(!d||!m)return;
+    S.swapPick=null;safe(store.patch("requests",id,{status:"propuesta",coverId:m.id,swapDate:d}),"Propuesta enviada. Tiene que aceptarla.")});
+  on("[data-swapno]","click",e=>safe(store.patch("requests",e.currentTarget.dataset.swapno,{status:"abierta",coverId:null,swapDate:null}),"Propuesta retirada"));
+  on("[data-swapok]","click",e=>acceptSwap(e.currentTarget.dataset.swapok));
+  on("[data-uncover]","click",async e=>{const id=e.currentTarget.dataset.uncover;await clearReqOverrides(id);safe(store.patch("requests",id,{status:"abierta",coverId:null,swapDate:null}),"Petición abierta otra vez")});
+  on("[data-cancel]","click",async e=>{const b=e.currentTarget;if(b.dataset.armed){await clearReqOverrides(b.dataset.cancel);safe(store.remove("requests",b.dataset.cancel),"Petición anulada")}else{b.dataset.armed="1";b.textContent="Toca otra vez para anular"}});
+  on("#logout","click",e=>{const b=e.currentTarget;if(b.dataset.armed)logout();else{b.dataset.armed="1";b.textContent="Toca otra vez para salir"}});
+  on("[data-pingen]","click",e=>{const pid=e.currentTarget.dataset.pingen,pin=String(1000+Math.floor(Math.random()*9000));safe(store.put("pins",pid,{pin}),`PIN creado para ${pname(pid)}`)});
+  on("[data-pinset]","click",()=>openPinChange());
+  on("[data-pname]","change",e=>{const v2=e.target.value.trim();if(v2)safe(store.patch("people",e.target.dataset.pname,{name:v2.slice(0,60)}),"Guardado")});
+  on("[data-pweek]","change",e=>safe(store.patch("people",e.target.dataset.pweek,{startWeek:Number(e.target.value)}),"Guardado"));
+  on("[data-pdel]","click",e=>{const b=e.currentTarget;if(b.dataset.armed){safe(store.remove("people",b.dataset.pdel),"Quitado")}else{b.dataset.armed="1";b.textContent="¿Seguro?"}});
+  on("#addP","click",()=>{const n=$("#newName").value.trim();if(!n){toast("Escribe un nombre");return}
+    safe(store.put("people",newId(),{name:n.slice(0,60),startWeek:Number($("#newWeek").value)}),"Añadido")});
+  on("#fillSlots","click",async()=>{for(const l of pattern().labels){await safe(store.put("people","sem"+l,{name:`Puesto semana ${l}`,startWeek:l}))}toast("Puestos creados. Cámbiales el nombre.")});
+  on("#vacAdd","click",async()=>{const pid=$("#vacWho")?.value||me()?.id,f=$("#vacFrom").value,t=$("#vacTo").value;
+    if(!pid||!f||!t){toast("Pon la fecha de inicio y la de fin");return}
+    if(t<f){toast("La fecha de fin va después de la de inicio");return}
+    if(S.vacations.some(v=>v.personId===pid&&v.from<=t&&f<=v.to)){toast("Se solapa con otras vacaciones o bajas de esa persona");return}
+    const type=$("#vacType")?.value||"vac",ask=$("#vacAsk")?.checked;
+    const ok=await safe(store.put("vacations",newId(),{personId:pid,from:f,to:t,type}),type==="baja"?"Baja apuntada":"Vacaciones añadidas");
+    if(ok&&ask){const p=personById(pid);let n=0;for(let x=parse(f);x<=parse(t);x+=DAY){const ds=fmt(x),b=shiftFor(p.startWeek,ds);
+      if(["m","t","n"].includes(b.k)&&ds>=todayStr()&&!S.requests.some(r=>r.personId===pid&&r.date===ds)){await safe(store.put("requests",newId(),{personId:pid,date:ds,note:type==="baja"?"Estoy de baja":"Vacaciones",status:"abierta",coverId:null,createdAt:new Date().toISOString()}));n++}}
+      if(n)toast(`Publicadas ${n} peticiones para cubrir tus turnos`)}});
+  on("#vacType","change",e=>{const c=$("#vacAsk");if(c)c.checked=e.target.value==="baja"});
+  on("[data-vdel]","click",e=>{const b=e.currentTarget;if(b.dataset.armed){safe(store.remove("vacations",b.dataset.vdel),"Vacaciones quitadas")}else{b.dataset.armed="1";b.textContent="¿Seguro?"}});
+  on("#cfgStart","change",e=>{if(e.target.value)saveCfg({startDate:e.target.value})});
+  on("#cfgVacW","change",e=>{const v=e.target.value.trim();if(/^\d{1,2}:\d{2}$/.test(v))saveCfg({vacWeek:v});else toast("Escríbelo como horas:minutos, por ejemplo 36:04")});
+  on("#cfgBajaH","change",e=>saveCfg({bajaHours:e.target.value}));
+  on("#cfgCuadro","change",e=>saveCfg({cuadro:e.target.value}));
+  on("#cfgYear","change",e=>{const y=Number(e.target.value);if(y>=2024&&y<=2040)saveCfg({year:y})});
+  on("#cfgAnchor","change",e=>{const v2=e.target.value;if(!v2)return;if(dowOf(parse(v2))!==0){toast("Elige un lunes");render();return}saveCfg({anchor:v2})});
+}
+/* ---------- cambiar el turno de un día a mano ---------- */
+const hhmm=m=>`${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
+const DEFCODE={m:"M",t:"T",n:"N",r:"RES",d:"D",v:"VAC",b:"BAJA"};
+const canEditDay=pid=>!!pid&&!S.readOnly&&(isAdm()||me()?.id===pid);
+function openSheet(ds,pid,sel=""){
+  const p=pid?personById(pid):null;const startWeek=p?p.startWeek:(sel.startsWith("w:")?Number(sel.slice(2)):pattern().labels[0]);
+  const s=p?eff(p,ds):shiftFor(startWeek,ds);
+  S.sheet={ds,pid:p?p.id:null,startWeek,k:s.k==="x"?"d":s.k,code:s.k==="d"?"":s.code,start:s.start||"",end:s.end||"",hours:s.k==="r"?hhmm(s.mins):""};
+  renderSheet();
+}
+function renderSheet(){
+  const root=$("#sheetRoot"),st=S.sheet;
+  if(!st){root.innerHTML="";return}
+  const p=st.pid?personById(st.pid):null;
+  const base=shiftFor(p?p.startWeek:st.startWeek,st.ds),cur=p?eff(p,st.ds):base;
+  const ed=canEditDay(st.pid)&&base.k!=="x";
+  const desc=s=>`<span class="pill sh k-${s.k}">${esc(s.code)}</span> ${s.start?`${s.start}–${s.end}`:KLABEL[s.k]}${s.mins?` · ${hfmt(s.mins)}`:""}`;
+  const pre=st.k==="d"?[]:presetsFor(st.k);
+  const dur=durOf(st.start,st.end,st.hours,st.k);
+  root.innerHTML=`<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Turno del ${longDate(st.ds)}">
+    <div class="row"><div class="grow"><div class="bigdate" style="font-size:20px">${longDate(st.ds)}</div><div class="muted" style="font-size:13px">${p?esc(p.name):`Semana de inicio ${st.startWeek}`} · semana ${base.week} del cuadro</div></div><button class="btn ghost small" id="sClose">Cerrar</button></div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:14px"><div>Según el cuadro: ${desc(base)}</div>${cur.manual?`<div><b>Ahora:</b> ${desc(cur)}${cur.fromReq?" <span class='muted'>(por un cambio con un compañero)</span>":""}</div>`:cur.vac?`<div><b>Ahora:</b> <span class="pill sh k-${cur.k}">${cur.code}</span> ${cur.k==="b"?"de baja":"vacaciones"} del ${longDate(cur.vac.from)} al ${longDate(cur.vac.to)}</div>`:""}</div>
+    ${ed?`<div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="margin:0">Cambiar el turno de este día</h2>
+      <div class="seg" role="group" aria-label="Tipo de turno">${["m","t","n","r","d","v","b"].map(k=>`<button type="button" class="k-${k}" data-sk="${k}" aria-pressed="${st.k===k}">${KLABEL[k]}</button>`).join("")}</div>
+      ${pre.length?`<div><div class="muted" style="font-size:12px;margin-bottom:4px">Turnos del cuadro (toca uno para rellenar):</div><div class="presets">${pre.map((x,i)=>`<button type="button" class="sh k-${st.k}" data-preset="${i}">${esc(x.code)} ${x.start?`${x.start}–${x.end}`:hfmt(mins(x.hours))}</button>`).join("")}</div></div>`:""}
+      ${NOTIME(st.k)?`<p class="muted" style="margin:0;font-size:13px">Ese día quedará como ${st.k==="v"?"vacaciones":st.k==="b"?"baja":"descanso"}${ABS(st.k)?` (computa ${(st.k==="v"?S.cfg.vacHours:S.cfg.bajaHours)==="cuadro"?"las horas del turno del cuadro":"0 horas"}). Para varios días seguidos, usa Equipo → Vacaciones y bajas.`:" (0 horas)."}</p>`:
+        st.k==="r"?`<div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="sCode">Código<input type="text" id="sCode" value="${esc(st.code)}" placeholder="RES"></label><label class="f" for="sHours">Horas computables<input type="time" id="sHours" value="${esc(st.hours)}"></label></div>`:
+        `<div class="times"><label class="f" for="sCode">Código<input type="text" id="sCode" value="${esc(st.code)}" placeholder="${DEFCODE[st.k]}"></label><label class="f" for="sStart">Entrada<input type="time" id="sStart" value="${esc(st.start)}"></label><label class="f" for="sEnd">Salida<input type="time" id="sEnd" value="${esc(st.end)}"></label></div>`}
+      <div class="dur" id="sDur">${NOTIME(st.k)?"":`Horas de este día: <b>${hfmt(dur)}</b>${st.k==="n"||(st.start&&st.end&&mins(st.end)<=mins(st.start))?" <span class='muted'>(termina al día siguiente)</span>":""}`}</div>
+      <div class="row"><button class="btn grow" id="sSave">Guardar cambio</button>${cur.manual?`<button class="btn ghost" id="sReset">Volver al cuadro</button>`:""}</div>
+    </div>`:base.k==="x"?`<p class="muted" style="margin:0;font-size:13px">Este día es del calendario anterior al cuadro nuevo y no se puede modificar.</p>`:st.pid?`<p class="muted" style="margin:0;font-size:13px">Solo esta persona o quien gestiona el cuadro puede cambiar su turno.</p>`:`<p class="muted" style="margin:0;font-size:13px">Para cambiar turnos, elige una persona arriba en lugar de una semana.</p>`}
+    <button class="btn ghost" id="sWho">Ver quién trabaja este día</button>
+  </div></div>`;
+  const q=s=>root.querySelector(s);
+  q("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSheet()});
+  q("#sClose").addEventListener("click",closeSheet);
+  q("#sWho").addEventListener("click",()=>{S.day=st.ds;S.sheet=null;go("dia")});
+  root.querySelectorAll("[data-sk]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.sk;if(k===st.k)return;st.k=k;st.code="";st.start="";st.end="";st.hours="";const pr=presetsFor(k);if(pr.length===1)Object.assign(st,{code:pr[0].code,start:pr[0].start||"",end:pr[0].end||"",hours:pr[0].hours||""});renderSheet()}));
+  root.querySelectorAll("[data-preset]").forEach(b=>b.addEventListener("click",()=>{const x=pre[Number(b.dataset.preset)];Object.assign(st,{code:x.code,start:x.start||"",end:x.end||"",hours:x.hours||""});renderSheet()}));
+  const upd=()=>{const d=durOf(st.start,st.end,st.hours,st.k);const el=q("#sDur");if(el&&!NOTIME(st.k))el.innerHTML=`Horas de este día: <b>${hfmt(d)}</b>${st.start&&st.end&&mins(st.end)<=mins(st.start)?" <span class='muted'>(termina al día siguiente)</span>":""}`};
+  [["#sCode","code"],["#sStart","start"],["#sEnd","end"],["#sHours","hours"]].forEach(([id,f])=>{const el=q(id);el&&el.addEventListener("input",()=>{st[f]=el.value;upd()})});
+  q("#sSave")?.addEventListener("click",saveSheet);
+  q("#sReset")?.addEventListener("click",async()=>{const ok=await safe(store.remove("overrides",st.pid+"_"+st.ds),"Vuelve al turno del cuadro");if(ok)closeSheet()});
+}
+function closeSheet(){S.sheet=null;renderSheet()}
+async function saveSheet(){
+  const st=S.sheet,p=personById(st.pid);if(!p)return;
+  const code=st.k==="d"?"D":st.k==="v"?"VAC":st.k==="b"?"BAJA":(st.code.trim().toUpperCase().slice(0,8)||DEFCODE[st.k]);
+  if((st.k==="m"||st.k==="t"||st.k==="n")&&!(st.start&&st.end)){toast("Pon la hora de entrada y de salida");return}
+  if(st.k==="r"&&!st.hours){toast("Pon las horas computables de la reserva");return}
+  const base=shiftFor(p.startWeek,st.ds),id=p.id+"_"+st.ds;
+  const same=st.k===base.k&&code===base.code&&(NOTIME(st.k)||st.k==="r"?durOf(null,null,st.hours,st.k)===base.mins:(st.start===base.start&&st.end===base.end));
+  const ok=same?await safe(store.remove("overrides",id),"Es el turno del cuadro"):await safe(store.put("overrides",id,{personId:p.id,date:st.ds,k:st.k,code,start:NOTIME(st.k)||st.k==="r"?null:st.start,end:NOTIME(st.k)||st.k==="r"?null:st.end,hours:st.k==="r"?st.hours:null}),"Turno cambiado. Horas recalculadas.");
+  if(ok)closeSheet();
+}
+async function coverReq(id){
+  const r=S.requests.find(x=>x.id===id),m=me();if(!r||!m)return;
+  const req=personById(r.personId);
+  if(!await safe(store.patch("requests",id,{status:"cubierta",coverId:m.id})))return;
+  if(req){const r0=eff(req,r.date),rs=ABS(r0.k)?r0.base:r0;
+    await giveShift(m,r.date,rs,id);
+    if(!ABS(r0.k))await giveShift(req,r.date,{k:"d",code:"D"},id);}
+  toast("Te quedas con el turno. Ya sale en tu cuadro.");
+}
+function giveShift(p,ds,s,reqId){return safe(store.put("overrides",p.id+"_"+ds,{personId:p.id,date:ds,k:s.k,code:s.code,start:s.start||null,end:s.end||null,hours:s.k==="r"?hhmm(s.mins):null,fromReq:reqId}))}
+async function acceptSwap(id){
+  const r=S.requests.find(x=>x.id===id),req=personById(r?.personId),c=personById(r?.coverId);if(!r||!req||!c||!r.swapDate)return;
+  const a0=eff(req,r.date),a=ABS(a0.k)?a0.base:a0,b=eff(c,r.swapDate);
+  await giveShift(c,r.date,a,id);await giveShift(req,r.date,{k:"d",code:"D"},id);
+  await giveShift(req,r.swapDate,b,id);await giveShift(c,r.swapDate,{k:"d",code:"D"},id);
+  safe(store.patch("requests",id,{status:"cubierta"}),"Cambio hecho. Ya sale en los dos cuadros.");
+}
+async function clearReqOverrides(id){for(const o of Object.values(S.overrides))if(o.fromReq===id)await safe(store.remove("overrides",o.id))}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sheet)closeSheet()});
+
+function openPinChange(){
+  const m=me();if(!m)return;
+  $("#sheetRoot").innerHTML=`<div class="scrim" id="scrim"><form class="sheet" id="pcForm" autocomplete="off"><div class="row"><h3 class="grow">Cambiar mi PIN</h3><button type="button" class="btn ghost small" id="pcClose">Cerrar</button></div>
+    <label class="f" for="pc1">Nuevo PIN (4 números)<input class="pin" id="pc1" type="password" inputmode="numeric" maxlength="4" style="font-size:24px;letter-spacing:.4em;text-align:center"></label>
+    <button class="btn" type="submit">Guardar</button></form></div>`;
+  $("#pcClose").addEventListener("click",()=>{$("#sheetRoot").innerHTML=""});
+  $("#pcForm").addEventListener("submit",async e=>{e.preventDefault();const v=$("#pc1").value.trim();if(!/^\d{4}$/.test(v)){toast("El PIN son 4 números");return}
+    if(await safe(store.put("pins",m.id,{pin:v}),"PIN cambiado"))$("#sheetRoot").innerHTML=""});
+}
+function saveCfg(p){safe(store.put("config","main",{...DEFAULT_CFG,...S.cfg,...p}),"Ajustes guardados")}
+function go(tab){S.tab=tab;render();window.scrollTo(0,0);
+  if(tab==="cuadro"){const t=todayStr();if(t.startsWith(String(S.cfg.year))){const el=document.getElementById("m"+(Number(t.slice(5,7))-1));el&&el.scrollIntoView({block:"start"})}}}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>go(b.dataset.tab)));
+$("#meChip").addEventListener("click",()=>go("equipo"));
+let tt;function toast(msg){let el=$(".toast");if(!el){el=document.createElement("div");el.className="toast";el.setAttribute("role","status");document.body.appendChild(el)}el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,2600)}
+/* Zoom con dos dedos sobre el contenido; se recuerda en cada dispositivo */
+let Z=1,pinch=null;const mainEl=document.querySelector("main");
+const tdist=e=>Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+function setZoom(nz,cy){
+  nz=Math.min(2.2,Math.max(1,Math.round(nz*100)/100));if(nz===Z)return;
+  const h=document.documentElement.scrollHeight,mid=(cy??innerHeight/2),rel=(scrollY+mid)/h;
+  const oz=Z,cx=innerWidth/2,ol=mainEl.scrollLeft;
+  if(oz===1)document.documentElement.style.setProperty("--ww",Math.min(560,mainEl.clientWidth)+"px");
+  Z=nz;document.documentElement.style.setProperty("--z",Z);
+  if(Z===1)document.documentElement.style.removeProperty("--ww");
+  scrollTo(scrollX,rel*document.documentElement.scrollHeight-mid);
+  mainEl.scrollLeft=Math.max(0,(ol+cx)*Z/oz-cx);
+  const c=$("#zoomChip");c.hidden=Z<=1.001;c.textContent=`${Math.round(Z*100)}% · Tamaño normal`;
+}
+mainEl.addEventListener("touchstart",e=>{if(e.touches.length===2)pinch={d:tdist(e),z:Z}},{passive:true});
+mainEl.addEventListener("touchmove",e=>{if(pinch&&e.touches.length===2){e.preventDefault();setZoom(pinch.z*tdist(e)/pinch.d,(e.touches[0].clientY+e.touches[1].clientY)/2)}},{passive:false});
+mainEl.addEventListener("touchend",e=>{if(pinch&&e.touches.length<2){pinch=null;try{localStorage.setItem("usi:zoom",Z)}catch(_){}}});
+$("#zoomChip").addEventListener("click",()=>{setZoom(1);mainEl.scrollLeft=0;try{localStorage.setItem("usi:zoom",1)}catch(_){}});
+try{const z=Number(localStorage.getItem("usi:zoom"));if(z>1)setZoom(z)}catch(_){}
+window.addEventListener("resize",()=>{if(Z>1){document.documentElement.style.setProperty("--ww",Math.min(560,mainEl.clientWidth)+"px")}});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+boot();
+</script>
+</body>
+</html>
