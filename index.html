@@ -603,16 +603,91 @@ function viewVacaciones(){
   const m=me(),canAll=isAdm()&&!S.readOnly,canOwn=!!m&&!S.readOnly;
   const pick=canAll?S.people:(m?[m]:[]);
   const days=v=>Math.round((parse(v.to)-parse(v.from))/DAY)+1;
-  const canDel=v=>!S.readOnly&&(isAdm()||(m&&v.personId===m.id));
-  const rows=S.vacations.filter(v=>personById(v.personId)).map(v=>`<div class="li"><span class="pill sh k-${v.type==="baja"?"b":"v"}">${v.type==="baja"?"BAJA":"VAC"}</span><div class="grow"><div class="who">${esc(pname(v.personId))}</div><div class="sub">Del ${longDate(v.from)} al ${longDate(v.to)} · ${days(v)} días</div></div>${canDel(v)?`<button class="btn small danger" data-vdel="${esc(v.id)}">Quitar</button>`:""}</div>`).join("");
+  const canEdit=v=>!S.readOnly&&(isAdm()||(m&&v.personId===m.id));
+  const filt=S.vacFilter??(m?m.id:"all");
+  const list=S.vacations.filter(v=>personById(v.personId)&&(filt==="all"||v.personId===filt));
+  let summary="";
+  if(filt!=="all"){const vac=list.filter(v=>v.type!=="baja").reduce((a,v)=>a+days(v),0),baja=list.filter(v=>v.type==="baja").reduce((a,v)=>a+days(v),0);
+    summary=`<div class="note" style="margin-bottom:10px"><b>${esc(pname(filt))}</b>: ${vac} días de vacaciones${baja?` · ${baja} de baja`:""}.</div>`}
+  const rows=list.map(v=>`<div class="li"><span class="pill sh k-${v.type==="baja"?"b":"v"}">${v.type==="baja"?"BAJA":"VAC"}</span><div class="grow"><div class="who">${esc(pname(v.personId))}</div><div class="sub">Del ${longDate(v.from)} al ${longDate(v.to)} · ${days(v)} días</div></div>${canEdit(v)?`<button class="btn small ghost" data-vedit="${esc(v.id)}">Cambiar</button>`:""}</div>`).join("");
+  const addFor=filt!=="all"&&(canAll||filt===m?.id)?filt:(m?.id||"");
   return `<section class="card"><h2>Vacaciones y bajas</h2>
-    ${pick.length&&(canAll||canOwn)?`<div style="display:grid;gap:8px;margin-bottom:10px">
-      ${canAll?`<label class="f" for="vacWho">Persona<select id="vacWho">${pick.map(p=>`<option value="${esc(p.id)}" ${m&&m.id===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`:""}
+    <label class="f" for="vacFilter" style="margin-bottom:10px">Ver las de<select id="vacFilter"><option value="all" ${filt==="all"?"selected":""}>Todo el equipo</option>${S.people.map(p=>`<option value="${esc(p.id)}" ${filt===p.id?"selected":""}>${esc(p.name)}${m&&m.id===p.id?" (yo)":""}</option>`).join("")}</select></label>
+    ${summary}
+    <div class="list" style="margin-bottom:12px">${rows||"<p class='muted' style='margin:0'>No hay vacaciones ni bajas apuntadas.</p>"}</div>
+    ${pick.length&&(canAll||canOwn)?`<details${list.length?"":" open"}><summary style="cursor:pointer;font-weight:600;color:var(--accent);padding:6px 0">+ Añadir vacaciones o baja</summary><div style="display:grid;gap:8px;margin-top:8px">
+      ${canAll?`<label class="f" for="vacWho">Persona<select id="vacWho">${pick.map(p=>`<option value="${esc(p.id)}" ${addFor===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`:""}
       <label class="f" for="vacType">Tipo<select id="vacType"><option value="vac">Vacaciones</option><option value="baja">Baja (enfermedad)</option></select></label>
       <div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="vacFrom">Desde<input type="date" id="vacFrom"></label><label class="f" for="vacTo">Hasta<input type="date" id="vacTo"></label></div>
       <label class="row" for="vacAsk" style="font-size:13px;gap:8px"><input type="checkbox" id="vacAsk"> Pedir a los compañeros que cubran mis turnos de esos días</label>
-      <button class="btn" id="vacAdd">Añadir</button></div>`:`<p class="muted" style="margin:0 0 8px;font-size:13px">${m?"":"Identifícate arriba para añadir tus vacaciones o una baja."}</p>`}
-    <div class="list">${rows||"<p class='muted' style='margin:0'>Todavía no hay vacaciones ni bajas apuntadas.</p>"}</div></section>`;
+      <button class="btn" id="vacAdd">Añadir</button></div></details>`:""}
+  </section>`;
+}
+/* Cambiar fechas de un periodo, quitar unos días (lo parte en dos) o borrarlo */
+function openVacEdit(id){
+  const v=S.vacations.find(x=>x.id===id);if(!v)return;
+  const isB=v.type==="baja";
+  const chunks=[];for(let t=parse(v.from);t<=parse(v.to);t+=7*DAY){const e=Math.min(t+6*DAY,parse(v.to));chunks.push({from:fmt(t),to:fmt(e),days:Math.round((e-t)/DAY)+1})}
+  $("#sheetRoot").innerHTML=`<div class="scrim" id="scrim"><div class="sheet">
+    <div class="row"><div class="grow"><h3>${isB?"Baja":"Vacaciones"} de ${esc(pname(v.personId))}</h3><div class="muted" style="font-size:13px">Ahora: del ${longDate(v.from)} al ${longDate(v.to)}</div></div><button class="btn ghost small" id="veClose">Cerrar</button></div>
+    <div style="border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px">
+      <h2 style="margin:0">Cambiar las fechas</h2>
+      <div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="veFrom">Desde<input type="date" id="veFrom" value="${v.from}"></label><label class="f" for="veTo">Hasta<input type="date" id="veTo" value="${v.to}"></label></div>
+      <button class="btn" id="veSave">Guardar fechas</button>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px">
+      <h2 style="margin:0">Mover días a otras fechas</h2>
+      <p class="muted" style="margin:0;font-size:13px">Elige qué días mueves (una semana, unos días o varias semanas) y dónde empiezan ahora. Donde estaban vuelve el turno del cuadro.</p>
+      <label class="f" for="veWeek">Atajo: elegir una semana<select id="veWeek">${chunks.map((c,i)=>`<option value="${i}">${longDate(c.from)} – ${longDate(c.to)}${c.days<7?` (${c.days} días)`:""}</option>`).join("")}</select></label>
+      <div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="veMvFrom">Mover desde<input type="date" id="veMvFrom" value="${chunks[0]?.from||""}" min="${v.from}" max="${v.to}"></label><label class="f" for="veMvTo">hasta<input type="date" id="veMvTo" value="${chunks[0]?.to||""}" min="${v.from}" max="${v.to}"></label></div>
+      <label class="f" for="veNew">Nueva fecha de inicio<input type="date" id="veNew"></label>
+      <button class="btn" id="veMove">Mover esos días</button>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px">
+      <h2 style="margin:0">Quitar unos días</h2>
+      <p class="muted" style="margin:0;font-size:13px">Por ejemplo, para mover una semana a otra fecha: quita aquí esos días y luego añádelos donde quieras. Esos días vuelven a tener el turno del cuadro.</p>
+      <div class="times" style="grid-template-columns:1fr 1fr"><label class="f" for="veCutFrom">Desde<input type="date" id="veCutFrom" min="${v.from}" max="${v.to}"></label><label class="f" for="veCutTo">Hasta<input type="date" id="veCutTo" min="${v.from}" max="${v.to}"></label></div>
+      <button class="btn ghost" id="veCut">Quitar esos días</button>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px"><button class="btn danger" id="veDel" style="width:100%">Borrar este periodo entero</button></div>
+  </div></div>`;
+  const close=()=>{$("#sheetRoot").innerHTML=""};
+  $("#veClose").addEventListener("click",close);
+  $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")close()});
+  const clash=(f,t,ignore)=>S.vacations.some(x=>x.id!==ignore&&x.personId===v.personId&&x.from<=t&&f<=x.to);
+  $("#veSave").addEventListener("click",async()=>{const f=$("#veFrom").value,t=$("#veTo").value;
+    if(!f||!t||t<f){toast("Revisa las fechas: la de fin va después de la de inicio");return}
+    if(clash(f,t,v.id)){toast("Se solapa con otras vacaciones o bajas de esa persona");return}
+    if(await safe(store.patch("vacations",v.id,{from:f,to:t}),"Fechas cambiadas"))close()});
+  $("#veWeek").addEventListener("change",e=>{const c=chunks[Number(e.target.value)];$("#veMvFrom").value=c.from;$("#veMvTo").value=c.to});
+  $("#veMove").addEventListener("click",async()=>{
+    const cf=$("#veMvFrom").value,ct=$("#veMvTo").value||cf,nf=$("#veNew").value;
+    if(!cf||!nf){toast("Elige qué días mueves y la nueva fecha");return}
+    if(ct<cf){toast("La fecha de fin va después de la de inicio");return}
+    if(cf<v.from||ct>v.to){toast("Los días a mover tienen que estar dentro de este periodo");return}
+    const c={from:cf,to:ct,days:Math.round((parse(ct)-parse(cf))/DAY)+1};
+    const nt=fmt(parse(nf)+(c.days-1)*DAY);
+    const inside=nf<=c.to&&c.from<=nt;
+    if(!inside&&clash(nf,nt,v.id)){toast("En esas fechas ya tiene otras vacaciones o una baja");return}
+    if(!inside&&v.from<=nt&&nf<=v.to){toast("Esas fechas ya son de vacaciones dentro de este mismo periodo");return}
+    const before=c.from>v.from?{from:v.from,to:fmt(parse(c.from)-DAY)}:null,after=c.to<v.to?{from:fmt(parse(c.to)+DAY),to:v.to}:null;
+    let ok=true;
+    if(!before&&!after)ok=await safe(store.remove("vacations",v.id));
+    else if(before&&after){ok=await safe(store.patch("vacations",v.id,before));if(ok)ok=await safe(store.put("vacations",newId(),{personId:v.personId,type:v.type||"vac",...after}))}
+    else ok=await safe(store.patch("vacations",v.id,before||after));
+    if(ok)ok=await safe(store.put("vacations",newId(),{personId:v.personId,type:v.type||"vac",from:nf,to:nt}),`${c.days} días movidos al ${longDate(nf)}`);
+    if(ok)close()});
+  $("#veCut").addEventListener("click",async()=>{let a=$("#veCutFrom").value,b=$("#veCutTo").value||a;
+    if(!a){toast("Elige desde qué día quitar");return}
+    if(b<a){toast("La fecha de fin va después de la de inicio");return}
+    if(a<v.from||b>v.to){toast("Esos días tienen que estar dentro del periodo");return}
+    const before=a>v.from?{from:v.from,to:fmt(parse(a)-DAY)}:null,after=b<v.to?{from:fmt(parse(b)+DAY),to:v.to}:null;
+    let ok;
+    if(!before&&!after)ok=await safe(store.remove("vacations",v.id),"Periodo borrado");
+    else if(before&&after){ok=await safe(store.patch("vacations",v.id,before));if(ok)ok=await safe(store.put("vacations",newId(),{personId:v.personId,type:v.type||"vac",...after}),"Días quitados: el periodo queda partido en dos")}
+    else ok=await safe(store.patch("vacations",v.id,before||after),"Días quitados");
+    if(ok)close()});
+  $("#veDel").addEventListener("click",e=>{const btn=e.currentTarget;if(btn.dataset.armed){safe(store.remove("vacations",v.id),"Periodo borrado").then(ok=>{if(ok)close()})}else{btn.dataset.armed="1";btn.textContent="Toca otra vez para borrarlo"}});
 }
 function viewEquipo(){
   const m=me(),P=pattern();
@@ -686,6 +761,8 @@ function wire(v){
     if(ok&&ask){const p=personById(pid);let n=0;for(let x=parse(f);x<=parse(t);x+=DAY){const ds=fmt(x),b=shiftFor(p.startWeek,ds);
       if(["m","t","n"].includes(b.k)&&ds>=todayStr()&&!S.requests.some(r=>r.personId===pid&&r.date===ds)){await safe(store.put("requests",newId(),{personId:pid,date:ds,note:type==="baja"?"Estoy de baja":"Vacaciones",status:"abierta",coverId:null,createdAt:new Date().toISOString()}));n++}}
       if(n)toast(`Publicadas ${n} peticiones para cubrir tus turnos`)}});
+  on("#vacFilter","change",e=>{S.vacFilter=e.target.value;render()});
+  on("[data-vedit]","click",e=>openVacEdit(e.currentTarget.dataset.vedit));
   on("#vacType","change",e=>{const c=$("#vacAsk");if(c)c.checked=e.target.value==="baja"});
   on("[data-vdel]","click",e=>{const b=e.currentTarget;if(b.dataset.armed){safe(store.remove("vacations",b.dataset.vdel),"Vacaciones quitadas")}else{b.dataset.armed="1";b.textContent="¿Seguro?"}});
   on("#cfgStart","change",e=>{if(e.target.value)saveCfg({startDate:e.target.value})});
