@@ -473,6 +473,7 @@ function viewCuadro(){
   <section class="card">
     <label class="f" for="selView">Ver el cuadro de</label>
     <select id="selView">${opts}</select>
+    <button class="btn ghost" id="pasBtn" type="button" style="width:100%;margin-top:10px">Descargar PAS en PDF</button>
     <div class="stats" style="margin-top:12px">
       <div class="stat k-m"><b>${cnt.m}</b><span>Mañanas</span></div>
       <div class="stat k-t"><b>${cnt.t}</b><span>Tardes</span></div>
@@ -646,6 +647,7 @@ function viewEquipo(){
 function wire(v){
   const on=(sel,ev,fn)=>v.querySelectorAll(sel).forEach(el=>el.addEventListener(ev,fn));
   on("#selView","change",e=>{S.viewSel=e.target.value;render()});
+  on("#pasBtn","click",()=>downloadPAS());
   on("[data-day]","click",e=>{const ds=e.currentTarget.dataset.day,sel=v.querySelector("#selView")?.value||"";openSheet(ds,sel.startsWith("p:")?sel.slice(2):null,sel)});
   on("#dayPick","change",e=>{if(e.target.value){S.day=e.target.value;render()}});
   on("[data-shift]","click",e=>{S.day=fmt(parse(S.day)+Number(e.currentTarget.dataset.shift)*DAY);render()});
@@ -779,6 +781,90 @@ function openPinChange(pid){
   $("#pcRand")?.addEventListener("click",()=>{$("#pc1").value=String(1000+Math.floor(Math.random()*9000))});
   $("#pcForm").addEventListener("submit",async e=>{e.preventDefault();const v=$("#pc1").value.trim();if(!/^\d{4}$/.test(v)){toast("El PIN son 4 números");return}
     if(await safe(store.put("pins",pid,{pin:v}),mine?"PIN cambiado":`PIN guardado para ${p.name}`))$("#sheetRoot").innerHTML=""});
+}
+
+/* ---------- Descargar la PAS anual en PDF ---------- */
+let jsPDFLoad=null;
+function loadJsPDF(){
+  if(window.jspdf)return Promise.resolve(window.jspdf.jsPDF);
+  if(!jsPDFLoad)jsPDFLoad=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";sc.onload=()=>res(window.jspdf.jsPDF);sc.onerror=()=>{jsPDFLoad=null;rej(new Error("no jspdf"))};document.head.appendChild(sc)});
+  return jsPDFLoad;
+}
+async function downloadPAS(){
+  const btn=$("#pasBtn");if(btn){btn.disabled=true;btn.textContent="Preparando el PDF…"}
+  try{
+    const JsPDF=await loadJsPDF();
+    const m=me(),P=pattern();
+    const sel=S.viewSel||(m?"p:"+m.id:"w:"+P.labels[0]);
+    const person=sel.startsWith("p:")?personById(sel.slice(2)):null;
+    const start=person?person.startWeek:Number(sel.slice(2));
+    const title=person?person.name:`Semana de inicio ${start}`;
+    const sh=ds=>person?eff(person,ds):shiftFor(start,ds);
+    const Y=S.cfg.year;
+    const FILL={m:[251,231,166],t:[248,205,180],n:[205,209,245],r:[195,229,222],v:[211,230,251],b:[247,207,220],d:[255,255,255],x:[230,232,230]};
+    const INK={m:[99,71,0],t:[122,47,14],n:[38,48,125],r:[12,79,68],v:[11,70,119],b:[124,18,57],d:[125,137,131],x:[154,163,159]};
+    const doc=new JsPDF({unit:"mm",format:"a4"});
+    const W=210,M=10;
+    // totales del año
+    let tot=0,loss=0;const cnt={m:0,t:0,n:0,r:0,d:0,v:0,b:0,x:0};const seen=new Set();
+    for(let t=Date.UTC(Y,0,1)-dowOf(Date.UTC(Y,0,1))*DAY;t<=Date.UTC(Y,11,31);t+=7*DAY){
+      const wd=[0,1,2,3,4,5,6].map(i=>sh(fmt(t+i*DAY))),wc=weekCredit(wd);
+      if(wc.loss&&!seen.has(t)){seen.add(t);loss+=wc.loss}
+      wd.forEach((x,i)=>{const d=t+i*DAY;if(d<Date.UTC(Y,0,1)||d>Date.UTC(Y,11,31))return;cnt[x.k]++;if(x.k!=="v")tot+=x.mins});}
+    let fw=0;
+    for(let t=Date.UTC(Y,0,1);t<=Date.UTC(Y,11,31);t+=DAY){if(dowOf(t)!==5||fmt(t+DAY)<(S.cfg.startDate||S.cfg.anchor))continue;
+      const a=sh(fmt(t-DAY)).k,b2=sh(fmt(t)).k,c=sh(fmt(t+DAY)).k;if(a==="n"||["m","t","n"].includes(b2)||["m","t","n"].includes(c))fw++}
+    // cabecera
+    doc.setFont("helvetica","bold");doc.setFontSize(18);doc.setTextColor(15,93,78);doc.text(`PAS ${Y} · ${title}`,M,16);
+    doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(91,104,98);
+    doc.text(`${P.name}${person?` · Semana de inicio ${start}`:""} · Generado el ${new Date().toLocaleDateString("es-ES")}`,M,21.5);
+    doc.setTextColor(23,32,28);doc.setFontSize(9);
+    const sum=[["Horas trabajadas",hfmt(Math.round(tot))],["Palmadas vac.",loss?"-"+hfmt(loss):"0h"],["Mañanas",String(cnt.m)],["Tardes",String(cnt.t)],["Noches",String(cnt.n)],["Reserva",String(cnt.r)],["Vacaciones",String(cnt.v)],["FdS trab.",String(fw)]];
+    let sx=M;sum.forEach(([l,v])=>{doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(v,sx,29);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(91,104,98);doc.text(l,sx,32.5);doc.setTextColor(23,32,28);sx+=24});
+    doc.setDrawColor(15,93,78);doc.setLineWidth(.5);doc.line(M,35,W-M,35);
+    // meses
+    const gx=4,gy=4,bw=(W-2*M-2*gx)/3,bh=57,top=39,hc=9,dw=(bw-hc)/7,rh=7.4;
+    for(let mo=0;mo<12;mo++){
+      const ox=M+(mo%3)*(bw+gx),oy=top+Math.floor(mo/3)*(bh+gy);
+      const first=Date.UTC(Y,mo,1),last=Date.UTC(Y,mo+1,0);
+      let mm=0;
+      doc.setFont("helvetica","normal");doc.setFontSize(6);doc.setTextColor(91,104,98);
+      DOWS.forEach((d,i)=>doc.text(d,ox+i*dw+dw/2,oy+8.5,{align:"center"}));doc.text("h",ox+7*dw+hc-1,oy+8.5,{align:"right"});
+      let row=0;
+      for(let wk=first-dowOf(first)*DAY;wk<=last;wk+=7*DAY,row++){
+        const wd=[0,1,2,3,4,5,6].map(i=>sh(fmt(wk+i*DAY))),wc=weekCredit(wd);let wm=0;
+        const y=oy+10+row*rh;
+        wd.forEach((x,i)=>{
+          const t=wk+i*DAY,val=x.k==="v"?x.mins*wc.ratio:x.mins;wm+=val;
+          if(t<first||t>last)return;
+          if(x.k!=="v")mm+=x.mins;
+          const cx=ox+i*dw;
+          doc.setFillColor(...FILL[x.k]);
+          if(x.k==="d"){doc.setDrawColor(217,223,217);doc.setLineWidth(.2);doc.roundedRect(cx+.3,y,dw-.6,rh-.8,.8,.8,"FD")}else doc.roundedRect(cx+.3,y,dw-.6,rh-.8,.8,.8,"F");
+          doc.setTextColor(...INK[x.k]);doc.setFont("helvetica","normal");doc.setFontSize(4.6);doc.text(String(new Date(t).getUTCDate()),cx+.9,y+2);
+          const code=x.k==="d"?"D":x.k==="x"?"":x.code;
+          doc.setFont("helvetica","bold");doc.setFontSize(code.length>4?4.4:code.length>3?5:6);doc.text(code,cx+dw/2,y+5.4,{align:"center"});
+          if(x.manual&&x.k!=="v"){doc.setDrawColor(...INK[x.k]);doc.setLineWidth(.25);doc.setLineDashPattern([.6,.4],0);doc.roundedRect(cx+.3,y,dw-.6,rh-.8,.8,.8,"S");doc.setLineDashPattern([],0)}
+        });
+        wm=Math.round(wm);
+        doc.setTextColor(23,32,28);doc.setFont("helvetica","bold");doc.setFontSize(5.4);
+        doc.text(wm?hfmt(wm):"-",ox+7*dw+hc-.5,y+3,{align:"right"});
+        if(wc.loss){doc.setTextColor(179,38,30);doc.setFontSize(4.8);doc.text("-"+hfmt(wc.loss),ox+7*dw+hc-.5,y+5.6,{align:"right"})}
+        else{const w=wd[0].week;doc.setFont("helvetica","normal");doc.setTextColor(91,104,98);doc.setFontSize(4.4);if(w!=="–")doc.text("s"+w,ox+7*dw+hc-.5,y+5.6,{align:"right"})}
+      }
+      doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.setTextColor(23,32,28);doc.text(MONTHS[mo][0].toUpperCase()+MONTHS[mo].slice(1),ox,oy+4.5);
+      doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(91,104,98);doc.text(hfmt(mm),ox+bw,oy+4.5,{align:"right"});
+    }
+    // leyenda
+    let ly=top+4*(bh+gy)+1,lx=M;
+    [["m","Mañana"],["t","Tarde"],["n","Noche"],["r","Reserva"],["v","Vacaciones"],["b","Baja"],["d","Descanso"],["x","Calendario anterior"]].forEach(([k,l])=>{
+      doc.setFillColor(...FILL[k]);doc.setDrawColor(217,223,217);doc.setLineWidth(.2);doc.rect(lx,ly-2.4,3,3,"FD");doc.setFontSize(7);doc.setTextColor(91,104,98);doc.text(l,lx+4,ly);lx+=doc.getTextWidth(l)+9});
+    doc.setFontSize(6.5);
+    doc.text(doc.splitTextToSize(`"h": horas de la semana (lunes a domingo); "s": semana del cuadro. En semanas de vacaciones cuentan como máximo ${S.cfg.vacWeek||"36:04"} (repartido por días) y en rojo lo que se palma. Los totales de mes y año son solo horas trabajadas. Borde discontinuo: turno cambiado.`,W-2*M),M,ly+5);
+    doc.save(`PAS ${Y} - ${title}.pdf`);
+    toast("PDF descargado");
+  }catch(e){console.error(e);toast("No se ha podido crear el PDF. Comprueba la conexión.")}
+  finally{if(btn){btn.disabled=false;btn.textContent="Descargar PAS en PDF"}}
 }
 function saveCfg(p){safe(store.put("config","main",{...DEFAULT_CFG,...S.cfg,...p}),"Ajustes guardados")}
 function go(tab){S.tab=tab;render();window.scrollTo(0,0);
