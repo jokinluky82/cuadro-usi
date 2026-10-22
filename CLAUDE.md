@@ -27,15 +27,15 @@ semanales y anuales, fines de semana trabajados.
 - `people/{id}`: `{name, startWeek, admin?}` (Jokin tiene `admin: true`).
 - `pins/{personId}`: `{pin}`; solo el administrador los lee/escribe.
 - `sessions/{uid}`: `{personId, pin, at}`; se crea solo si el PIN coincide (lo comprueban las reglas).
-- `config/main`: ajustes (cuadro, anchor `2027-01-11`, startDate `2027-01-13`, vacWeek `36:04`,
+- `config/main`: ajustes (cuadro, anchor `2027-01-11`, startDate `2027-01-11`, vacWeek `36:04`,
   bajaHours, adminPerson, adminPinSet).
 - `vacations/{id}`: `{personId, from, to, type: "vac"|"baja"}`.
 - `requests/{id}`: peticiones de día libre `{personId, date, note, status: abierta|propuesta|cubierta, coverId, swapDate}`.
 - `overrides/{personId_fecha}`: cambio de turno de un día `{personId, date, k, code, start, end, hours, fromReq?}`.
 
 ## Reglas de negocio acordadas
-- El cuadro arranca el lunes 11/01/2027; cada uno está esa semana en su semana de inicio, pero
-  se aplica desde el miércoles 13/01. Días anteriores: gris, sin turno, no editables.
+- El cuadro arranca y se aplica desde el lunes 11/01/2027 (confirmado); cada uno está esa semana
+  en su semana de inicio. Días anteriores (1–10 de enero): gris, sin turno, no editables.
 - Vacaciones: no suman horas trabajadas. En la columna semanal se muestra la cuenta con tope
   36:04 por semana (5:09 por día de vacaciones) y en rojo lo que se pierde ("palma").
   Nunca se ganan horas. Arriba: horas trabajadas y horas palmadas en vacaciones (sin comparar con jornada).
