@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cuadro USI · Carga inicial</title>
+<style>
+body{margin:0;font:16px system-ui,-apple-system,"Segoe UI",sans-serif;background:#eef1ed;color:#17201c}
+main{max-width:520px;margin:0 auto;padding:32px 16px;display:flex;flex-direction:column;gap:16px}
+h1{margin:0;font-size:24px;color:#0f5d4e}
+.card{background:#fff;border:1px solid #d9dfd9;border-radius:14px;padding:16px}
+button,label.btn{display:inline-block;border:0;border-radius:10px;padding:12px 16px;font:600 16px system-ui;background:#0f5d4e;color:#fff;cursor:pointer}
+#log{white-space:pre-wrap;font:14px ui-monospace,monospace;margin:0}
+.ok{color:#1f7a3d;font-weight:700}.err{color:#b3261e;font-weight:700}
+</style></head><body><main>
+<h1>Cuadro USI · Carga inicial</h1>
+<div class="card">Esta página mete en la base de datos el equipo y las vacaciones. Solo funciona una vez, cuando la base de datos está vacía.</div>
+<div class="card"><label class="btn" for="file">Elegir el archivo de datos</label><input id="file" type="file" accept=".json,application/json" hidden></div>
+<div class="card"><p id="log">Esperando el archivo…</p></div>
+</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,writeBatch,doc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const app=initializeApp({"apiKey": "AIzaSyBc2TQegO48gG-6AzoM2L5K1qV9Iq0ClN8", "authDomain": "cuadro-usis.firebaseapp.com", "projectId": "cuadro-usis", "storageBucket": "cuadro-usis.firebasestorage.app", "messagingSenderId": "335161788801", "appId": "1:335161788801:web:e183ecf23dc4ea21948080"});
+const db=getFirestore(app),auth=getAuth(app);
+const log=(t,c)=>{const el=document.getElementById("log");el.className=c||"";el.textContent=t};
+document.getElementById("file").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    log("Conectando…");
+    await signInAnonymously(auth);
+    const b=writeBatch(db);let n=0;
+    for(const [coll,docs] of Object.entries(data))for(const [id,v] of Object.entries(docs)){b.set(doc(db,coll,id),v);n++}
+    log(`Guardando ${n} datos…`);
+    await b.commit();
+    log(`Hecho: ${Object.keys(data.people||{}).length} personas y ${Object.keys(data.vacations||{}).length} periodos de vacaciones cargados. Ya puedes abrir la app.`,"ok");
+  }catch(err){
+    console.error(err);
+    log(err&&err.code==="permission-denied"?"La base de datos ya tiene datos (o las reglas no están puestas). No se ha cambiado nada.":"No se ha podido cargar: "+(err.message||err),"err");
+  }
+});
+</script></body></html>

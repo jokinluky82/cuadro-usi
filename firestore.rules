@@ -21,6 +21,8 @@ service cloud.firestore {
       return r.personId == me() || r.get('coverId', null) == me();
     }
     function ownOrAdmin(data) { return isAdmin() || (hasSess() && data.personId == me()); }
+    // Carga inicial: solo mientras todavía no existe la configuración del cuadro.
+    function firstLoad() { return signedIn() && !exists(/databases/$(database)/documents/config/main); }
     function viaReq(data) {
       return hasSess() && data.get('fromReq', null) != null && involved(data.fromReq);
     }
@@ -46,15 +48,17 @@ service cloud.firestore {
     match /people/{pid} {
       allow read: if signedIn();
       allow write: if isAdmin();
+      allow create: if firstLoad();
     }
     match /config/{doc} {
       allow read: if signedIn();
       allow write: if isAdmin();
+      allow create: if firstLoad();
     }
 
     match /vacations/{id} {
       allow read: if hasSess();
-      allow create: if ownOrAdmin(request.resource.data);
+      allow create: if ownOrAdmin(request.resource.data) || firstLoad();
       allow update: if ownOrAdmin(resource.data) && ownOrAdmin(request.resource.data);
       allow delete: if ownOrAdmin(resource.data);
     }
